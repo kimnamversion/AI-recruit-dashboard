@@ -52,12 +52,13 @@ Only **one** integration in this app makes a real external network call end-to-e
 | Feature | Status | Where |
 |---|---|---|
 | Naver Cafe publish | ✅ Real — real OAuth login, real `openapi.naver.com` article POST, real response relayed unmodified | `server/server.js`, `js/adcenter.js:1020-1290` |
-| "AI" copy generation | ❌ Fake — no LLM call. Regex-matches the title/category against 9 hardcoded job-category templates in `AI_GENERATION_BANK` and fills the form | `js/jobs.js:530-644` (`generateAICopy`) |
 | 잡코리아 / 사람인 / 워크넷 publish | ❌ Fake — `buildCopyForChannel()` only generates per-site-formatted *text* for the user to copy-paste manually. There is no publish API call to any of these three sites | `js/adcenter.js:660-780` |
+
+The old fake "AI" copy generator (`AI_GENERATION_BANK` regex/template bank in `js/jobs.js` + the "AI 카피 생성" button in `index.html`) has been removed — it never called an LLM. `js/data.js`'s `JOBS_DATA` seed list has also been emptied (`[]`) so the dashboard no longer opens with fabricated sample job postings; `AppState.jobs` now starts empty and is populated only by real data entered through the UI (persisted to `localStorage`). Note: `PLATFORMS_DATA`, `NOTIFICATIONS_DATA`, `DEPLOY_HISTORY`, and `MONTHLY_STATS` in `js/data.js` are still sample/demo data feeding the dashboard and analytics charts.
 
 To turn this into a real production system, each row needs different work:
 
-- **Real AI copy**: add a server-side LLM proxy route (e.g. `POST /api/ai/generate` in `server.js`) that calls Claude/OpenAI with the job fields as input — never call an LLM API directly from the browser, that leaks the API key the same way Naver's token is deliberately kept server-side only. Keep `AI_GENERATION_BANK` as an offline fallback if desired.
+- **Real AI copy**: add a server-side LLM proxy route (e.g. `POST /api/ai/generate` in `server.js`) that calls Claude/OpenAI with the job fields as input — never call an LLM API directly from the browser, that leaks the API key the same way Naver's token is deliberately kept server-side only.
 - **워크넷 (고용24)**: 공공데이터포털 Open API exists but appears to be read-only (job search/listing); posting likely requires a 고용24 사업주 계정 and a separate approval — verify before assuming a simple API-key integration is possible.
 - **사람인 / 잡코리아**: no public self-serve posting API. Real posting requires a paid advertiser/business partnership with each company (feed-based or dedicated integration API) — this is a business/contract prerequisite, not something solvable by writing more code.
 - **Infra hardening needed regardless**: `server/naver_token.json` is a single-user flat-file token store with no refresh-token rotation logic — fine for local single-operator use, not for multi-user/deployed use (would need a real datastore + refresh-token handling before going beyond localhost).
