@@ -1,0 +1,23 @@
+# 환경변수 및 비밀 인증키 (절대 노출 금지)
+.env
+server/.env
+*.env
+server/naver_token.json
+naver_token.json
+
+# Node 의존성 라이브러리 (용량 큼)
+node_modules/
+server/node_modules/
+package-lock.json
+
+# 임시 백업 및 압축 파일
+*.zip
+*_backup*
+*-backup*
+*backup*
+
+# OS / 에디터 임시 파일
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

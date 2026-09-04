@@ -1,0 +1,107 @@
+/* ================================================
+   VARIABLES.CSS — 디자인 시스템 토큰
+   ================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* ─── 색상: 배경 ─── */
+  --bg-base:        #080c14;
+  --bg-surface:     #0d1320;
+  --bg-elevated:    #121929;
+  --bg-overlay:     #1a2234;
+  --bg-hover:       #1f2a40;
+
+  /* ─── 색상: 포인트 (보라-파랑 그라디언트 계열) ─── */
+  --accent-primary:   #6c63ff;
+  --accent-secondary: #3ecfff;
+  --accent-tertiary:  #a855f7;
+  --accent-success:   #22d3a0;
+  --accent-warning:   #f59e0b;
+  --accent-danger:    #f43f5e;
+  --accent-info:      #38bdf8;
+
+  /* ─── 그라디언트 ─── */
+  --gradient-primary:   linear-gradient(135deg, #6c63ff 0%, #3ecfff 100%);
+  --gradient-secondary: linear-gradient(135deg, #a855f7 0%, #6c63ff 100%);
+  --gradient-success:   linear-gradient(135deg, #22d3a0 0%, #38bdf8 100%);
+  --gradient-warm:      linear-gradient(135deg, #f59e0b 0%, #f43f5e 100%);
+  --gradient-surface:   linear-gradient(135deg, rgba(108,99,255,0.08) 0%, rgba(62,207,255,0.05) 100%);
+
+  /* ─── 색상: 텍스트 ─── */
+  --text-primary:   #f0f4ff;
+  --text-secondary: #8b9ab8;
+  --text-muted:     #4a5568;
+  --text-inverse:   #080c14;
+
+  /* ─── 색상: 테두리 ─── */
+  --border-subtle:  rgba(255, 255, 255, 0.05);
+  --border-default: rgba(255, 255, 255, 0.10);
+  --border-strong:  rgba(255, 255, 255, 0.18);
+  --border-accent:  rgba(108, 99, 255, 0.40);
+
+  /* ─── 플랫폼 색상 ─── */
+  --platform-jobkorea: #e8421a;
+  --platform-saramin:  #0066cc;
+  --platform-worknet:  #00833e;
+
+  /* ─── 폰트 ─── */
+  --font-korean: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  --font-latin:  'Inter', system-ui, sans-serif;
+  --font-mono:   'JetBrains Mono', 'Fira Code', monospace;
+
+  /* ─── 폰트 크기 ─── */
+  --text-xs:   0.75rem;   /* 12px */
+  --text-sm:   0.875rem;  /* 14px */
+  --text-base: 1rem;      /* 16px */
+  --text-lg:   1.125rem;  /* 18px */
+  --text-xl:   1.25rem;   /* 20px */
+  --text-2xl:  1.5rem;    /* 24px */
+  --text-3xl:  1.875rem;  /* 30px */
+  --text-4xl:  2.25rem;   /* 36px */
+
+  /* ─── 간격 ─── */
+  --space-1:  0.25rem;   /* 4px */
+  --space-2:  0.5rem;    /* 8px */
+  --space-3:  0.75rem;   /* 12px */
+  --space-4:  1rem;      /* 16px */
+  --space-5:  1.25rem;   /* 20px */
+  --space-6:  1.5rem;    /* 24px */
+  --space-8:  2rem;      /* 32px */
+  --space-10: 2.5rem;    /* 40px */
+  --space-12: 3rem;      /* 48px */
+  --space-16: 4rem;      /* 64px */
+
+  /* ─── 반경 ─── */
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   16px;
+  --radius-xl:   24px;
+  --radius-full: 9999px;
+
+  /* ─── 그림자 ─── */
+  --shadow-sm:  0 1px 3px rgba(0,0,0,0.4);
+  --shadow-md:  0 4px 16px rgba(0,0,0,0.4);
+  --shadow-lg:  0 8px 32px rgba(0,0,0,0.5);
+  --shadow-xl:  0 16px 48px rgba(0,0,0,0.6);
+  --shadow-glow-primary:   0 0 24px rgba(108,99,255,0.3);
+  --shadow-glow-secondary: 0 0 24px rgba(62,207,255,0.2);
+  --shadow-glow-success:   0 0 24px rgba(34,211,160,0.3);
+  --shadow-glow-danger:    0 0 24px rgba(244,63,94,0.3);
+
+  /* ─── 레이아웃 ─── */
+  --sidebar-width:      240px;
+  --sidebar-collapsed:  70px;
+  --header-height:      64px;
+  --content-max-width:  1440px;
+
+  /* ─── 전환 ─── */
+  --transition-fast:   150ms ease;
+  --transition-base:   250ms ease;
+  --transition-slow:   400ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ─── 글래스모피즘 ─── */
+  --glass-bg:     rgba(13, 19, 32, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-blur:   blur(16px);
+}

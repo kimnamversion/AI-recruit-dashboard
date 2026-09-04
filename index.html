@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 채용광고 자동배포 대시보드</title>
+  <meta name="description" content="잡코리아·사람인·워크넷 채용광고를 AI로 자동 생성하고 한 번에 관리하는 스마트 대시보드">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages.css">
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div class="app-wrapper">
+
+  <!-- ================================================
+       사이드바
+       ================================================ -->
+  <aside class="sidebar">
+    <!-- 로고 -->
+    <a href="#" class="sidebar-logo">
+      <div class="logo-icon">🤖</div>
+      <div class="logo-text">
+        <div class="logo-title">AI 채용광고</div>
+        <div class="logo-subtitle">자동배포 대시보드</div>
+      </div>
+    </a>
+
+    <!-- 네비게이션 -->
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-label">메인</div>
+        <div class="nav-item active" data-page="dashboard">
+          <div class="nav-icon">🏠</div>
+          <div class="nav-label">대시보드</div>
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-label">공고 및 배포 관리</div>
+        <div class="nav-item" data-page="jobs">
+          <div class="nav-icon">📋</div>
+          <div class="nav-label">채용공고 관리</div>
+        </div>
+        <div class="nav-item" data-page="adcenter">
+          <div class="nav-icon">📣</div>
+          <div class="nav-label">광고/배포 센터</div>
+        </div>
+        <div class="nav-item" data-page="deploy">
+          <div class="nav-icon">🚀</div>
+          <div class="nav-label">자동배포 설정</div>
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-label">분석</div>
+        <div class="nav-item" data-page="analytics">
+          <div class="nav-icon">📊</div>
+          <div class="nav-label">성과 분석</div>
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-label">시스템</div>
+        <div class="nav-item" data-page="settings">
+          <div class="nav-icon">⚙️</div>
+          <div class="nav-label">플랫폼 설정</div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- 사용자 정보 -->
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="user-avatar">관</div>
+        <div class="user-info">
+          <div class="user-name">관리자</div>
+          <div class="user-role">Admin · (주)테크스타트업</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ================================================
+       메인 래퍼
+       ================================================ -->
+  <div class="main-wrapper">
+
+    <!-- 상단 헤더 -->
+    <header class="header">
+      <div class="header-breadcrumb">
+        <div id="header-page-title" class="page-title">대시보드</div>
+      </div>
+      <div class="header-actions">
+        <div class="header-search">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="공고, 플랫폼 검색...">
+        </div>
+        <div class="header-icon-btn" data-tooltip="알림" onclick="navigateTo('dashboard')">
+          🔔
+          <span class="notif-dot" id="notif-count-badge"></span>
+        </div>
+        <div class="header-icon-btn" data-tooltip="새 공고 등록" onclick="navigateTo('jobs'); setTimeout(() => openJobModal(), 300)">
+          ➕
+        </div>
+      </div>
+    </header>
+
+    <!-- ============================================
+         페이지 콘텐츠
+         ============================================ -->
+    <main class="page-content">
+
+      <!-- ==========================================
+           대시보드 페이지
+           ========================================== -->
+      <div id="page-dashboard" class="page-view active">
+
+        <!-- KPI 카드 -->
+        <div id="kpi-grid" class="kpi-grid"></div>
+
+        <!-- 플랫폼 현황 -->
+        <div class="section-header">
+          <div>
+            <div class="section-title">플랫폼 배포 현황</div>
+            <div class="section-subtitle">연결된 채용 플랫폼의 실시간 현황</div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="navigateTo('settings')">⚙️ 연동 설정</button>
+        </div>
+        <div id="platform-grid" class="platform-grid"></div>
+
+        <!-- 하단 2단 레이아웃 -->
+        <div class="dashboard-bottom">
+          <!-- 월별 지원자 차트 -->
+          <div class="card">
+            <div class="section-header" style="margin-bottom: var(--space-4)">
+              <div>
+                <div class="section-title">월별 지원자 현황</div>
+                <div class="section-subtitle">플랫폼별 지원자 추이 (최근 6개월)</div>
+              </div>
+            </div>
+            <div class="chart-container">
+              <canvas id="deploy-chart"></canvas>
+            </div>
+          </div>
+
+          <!-- 알림 피드 -->
+          <div class="card">
+            <div class="section-header" style="margin-bottom: var(--space-4)">
+              <div class="section-title">알림</div>
+              <button class="btn btn-ghost btn-sm" style="font-size: var(--text-xs); color: var(--text-muted)">모두 읽음</button>
+            </div>
+            <div id="notif-feed" class="notif-feed"></div>
+          </div>
+        </div>
+
+        <!-- 최근 공고 목록 -->
+        <div class="card recent-jobs-card">
+          <div class="section-header" style="margin-bottom: var(--space-4)">
+            <div>
+              <div class="section-title">최근 공고</div>
+              <div class="section-subtitle">활성 및 진행 중인 채용공고</div>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="navigateTo('jobs'); setTimeout(() => openJobModal(), 300)">
+              ➕ 새 공고
+            </button>
+          </div>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>공고명</th>
+                  <th>플랫폼</th>
+                  <th>상태</th>
+                  <th>지원자</th>
+                  <th>노출</th>
+                  <th>마감</th>
+                  <th>액션</th>
+                </tr>
+              </thead>
+              <tbody id="recent-jobs-tbody"></tbody>
+            </table>
+          </div>
+          <div style="text-align: center; margin-top: var(--space-4)">
+            <button class="btn btn-ghost" onclick="navigateTo('jobs')" style="font-size: var(--text-sm)">
+              전체 공고 보기 →
+            </button>
+          </div>
+        </div>
+
+      </div><!-- /page-dashboard -->
+
+
+      <!-- ==========================================
+           채용공고 관리 페이지
+           ========================================== -->
+      <div id="page-jobs" class="page-view">
+
+        <!-- 상단 통계 -->
+        <div class="grid grid-4" style="margin-bottom: var(--space-5)">
+          <div class="card" style="text-align: center; padding: var(--space-4)">
+            <div style="font-size: var(--text-2xl); font-weight: 800; color: var(--text-primary); font-family: var(--font-latin)" id="job-stat-all">0</div>
+            <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 4px">전체 공고</div>
+          </div>
+          <div class="card" style="text-align: center; padding: var(--space-4)">
+            <div style="font-size: var(--text-2xl); font-weight: 800; color: var(--accent-success); font-family: var(--font-latin)" id="job-stat-active">0</div>
+            <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 4px">진행 중</div>
+          </div>
+          <div class="card" style="text-align: center; padding: var(--space-4)">
+            <div style="font-size: var(--text-2xl); font-weight: 800; color: var(--accent-warning); font-family: var(--font-latin)" id="job-stat-paused">0</div>
+            <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 4px">일시정지</div>
+          </div>
+          <div class="card" style="text-align: center; padding: var(--space-4)">
+            <div style="font-size: var(--text-2xl); font-weight: 800; color: var(--text-secondary); font-family: var(--font-latin)" id="job-stat-draft">0</div>
+            <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 4px">임시저장</div>
+          </div>
+        </div>
+
+        <!-- 툴바 -->
+        <div class="jobs-toolbar">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="jobs-search" placeholder="공고명, 태그 검색...">
+          </div>
+          <div class="jobs-filters">
+            <div class="filter-chip active" data-filter="all">전체</div>
+            <div class="filter-chip" data-filter="active">진행 중</div>
+            <div class="filter-chip" data-filter="paused">일시정지</div>
+            <div class="filter-chip" data-filter="draft">임시저장</div>
+            <div class="filter-chip" data-filter="ended">종료</div>
+          </div>
+          <button class="btn btn-primary" style="margin-left: auto" onclick="openJobModal()">
+            ➕ 새 공고 등록
+          </button>
+        </div>
+
+        <!-- 공고 목록 -->
+        <div id="jobs-list" class="jobs-grid"></div>
+      </div><!-- /page-jobs -->
+
+
+      <!-- ==========================================
+           광고/배포 센터 페이지
+           ========================================== -->
+      <div id="page-adcenter" class="page-view">
+        
+        <!-- 상단: 배포 대상 공고 선택 및 요약 카드 -->
+        <div id="adcenter-header-area"></div>
+
+        <!-- 툴바: 비용 필터 + 전체선택 + 일괄생성 버튼 -->
+        <div class="adcenter-toolbar">
+          <div class="adcenter-filters">
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: var(--text-xs); color: var(--text-secondary); margin-right: var(--space-2)">
+              <input type="checkbox" checked onchange="toggleSelectAllChannels(this.checked)" style="width: 16px; height: 16px; accent-color: var(--accent-primary)">
+              <span>전체 선택</span>
+            </label>
+            <span style="color: var(--border-subtle); margin: 0 4px">|</span>
+            <div class="filter-chip adcenter-filter-chip active" data-cost="all">전체 채널 (10)</div>
+            <div class="filter-chip adcenter-filter-chip" data-cost="free">🟢 무료 (7)</div>
+            <div class="filter-chip adcenter-filter-chip" data-cost="low">🔵 저비용 (1)</div>
+            <div class="filter-chip adcenter-filter-chip" data-cost="paid">🟡 유료/확인 (2)</div>
+          </div>
+
+          <button type="button" class="btn btn-primary" onclick="generateAllSelectedCopies()" style="box-shadow: 0 4px 16px rgba(108,99,255,0.4)">
+            📋 선택 채널 광고문구 한꺼번에 생성
+          </button>
+        </div>
+
+        <!-- 채널 카드 그리드 (무료 -> 저비용 -> 유료 순) -->
+        <div id="adcenter-channels-grid" class="adcenter-grid"></div>
+
+      </div><!-- /page-adcenter -->
+
+
+
+      <!-- ==========================================
+           자동배포 설정 페이지
+           ========================================== -->
+      <div id="page-deploy" class="page-view">
+        <div class="deploy-layout">
+          <!-- 플랫폼별 설정 -->
+          <div>
+            <div class="section-header">
+              <div>
+                <div class="section-title">자동배포 설정</div>
+                <div class="section-subtitle">플랫폼별 배포 스케줄을 설정하세요</div>
+              </div>
+            </div>
+            <div id="deploy-platforms-list" class="deploy-platform-list"></div>
+          </div>
+
+          <!-- 배포 이력 -->
+          <div>
+            <div class="section-header">
+              <div class="section-title">배포 이력</div>
+            </div>
+            <div class="card">
+              <div id="deploy-timeline" class="timeline"></div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /page-deploy -->
+
+
+      <!-- ==========================================
+           성과 분석 페이지
+           ========================================== -->
+      <div id="page-analytics" class="page-view">
+
+        <!-- 헤더 -->
+        <div class="analytics-header">
+          <div>
+            <div class="section-title">성과 분석</div>
+            <div class="section-subtitle">플랫폼별 채용 성과를 분석합니다</div>
+          </div>
+          <div class="date-range-picker">
+            <div class="date-chip active" data-range="7d">7일</div>
+            <div class="date-chip" data-range="30d">30일</div>
+            <div class="date-chip" data-range="90d">90일</div>
+            <div class="date-chip" data-range="1y">1년</div>
+          </div>
+        </div>
+
+        <!-- 요약 KPI -->
+        <div class="grid grid-4" style="margin-bottom: var(--space-5)">
+          <div class="card" style="text-align: center; padding: var(--space-4)">
+            <div style="font-size: var(--text-2xl); font-weight: 800; color: var(--accent-secondary); font-family: var(--font-latin)" id="analytics-views">0</div>
+            <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 4px">총 노출 수</div>
+            <div id="analytics-views-change" style="font-size: var(--text-xs); color: var(--accent-success); margin-top: 2px; font-weight: 600"></div>
+          </div>
+          <div class="card" style="text-align: center; padding: var(--space-4)">
+            <div style="font-size: var(--text-2xl); font-weight: 800; color: var(--accent-success); font-family: var(--font-latin)" id="analytics-apps">0</div>
+            <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 4px">총 지원자</div>
+            <div id="analytics-apps-change" style="font-size: var(--text-xs); color: var(--accent-success); margin-top: 2px; font-weight: 600"></div>
+          </div>
+          <div class="card" style="text-align: center; padding: var(--space-4)">
+            <div style="font-size: var(--text-2xl); font-weight: 800; color: var(--accent-warning); font-family: var(--font-latin)" id="analytics-cpa">0</div>
+            <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 4px">지원자당 비용(CPA)</div>
+          </div>
+          <div class="card" style="text-align: center; padding: var(--space-4)">
+            <div style="font-size: var(--text-2xl); font-weight: 800; color: var(--accent-tertiary); font-family: var(--font-latin)" id="analytics-cvr">0%</div>
+            <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 4px">전환율(CVR)</div>
+          </div>
+        </div>
+
+        <!-- 차트 영역 -->
+        <div class="analytics-grid">
+          <div class="card">
+            <div class="section-title" style="margin-bottom: var(--space-4)">플랫폼별 노출 추이</div>
+            <div class="chart-container chart-tall">
+              <canvas id="views-chart"></canvas>
+            </div>
+          </div>
+          <div class="card">
+            <div class="section-title" style="margin-bottom: var(--space-4)">이번 달 지원자 비중</div>
+            <div class="chart-container" style="height: 280px">
+              <canvas id="platform-compare-chart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- 공고별 성과 테이블 -->
+        <div class="card" style="margin-top: var(--space-5)">
+          <div class="section-title" style="margin-bottom: var(--space-4)">공고별 성과 순위</div>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="width: 48px">순위</th>
+                  <th>공고명</th>
+                  <th>플랫폼</th>
+                  <th>노출 수</th>
+                  <th>지원자</th>
+                  <th>전환율</th>
+                  <th style="width: 120px">전환율 비교</th>
+                </tr>
+              </thead>
+              <tbody id="analytics-jobs-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div><!-- /page-analytics -->
+
+
+      <!-- ==========================================
+           플랫폼 설정 페이지
+           ========================================== -->
+      <div id="page-settings" class="page-view">
+        <div class="settings-grid">
+          <!-- 설정 메뉴 -->
+          <div class="settings-menu">
+            <div class="settings-menu-item active" data-tab="platform">
+              <span>🔌</span> 플랫폼 연동
+            </div>
+            <div class="settings-menu-item" data-tab="account">
+              <span>👤</span> 계정 정보
+            </div>
+            <div class="settings-menu-item" data-tab="notify">
+              <span>🔔</span> 알림 설정
+            </div>
+          </div>
+
+          <!-- 설정 내용 -->
+          <div>
+            <!-- 플랫폼 연동 탭 -->
+            <div id="settings-tab-platform" class="settings-tab-content">
+              <div class="section-header" style="margin-bottom: var(--space-5)">
+                <div>
+                  <div class="section-title">플랫폼 연동 설정</div>
+                  <div class="section-subtitle">채용 플랫폼 API 키를 등록하고 연결 상태를 관리하세요</div>
+                </div>
+              </div>
+              <div id="settings-platform-content"></div>
+            </div>
+
+            <!-- 계정 정보 탭 -->
+            <div id="settings-tab-account" class="settings-tab-content hidden">
+              <div class="card">
+                <div class="section-title" style="margin-bottom: var(--space-5)">계정 정보</div>
+                <div style="display: flex; flex-direction: column; gap: var(--space-4)">
+                  <div class="form-group">
+                    <label class="form-label">회사명</label>
+                    <input type="text" class="form-input" value="(주)테크스타트업">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">담당자명</label>
+                    <input type="text" class="form-input" value="관리자">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">이메일</label>
+                    <input type="email" class="form-input" value="admin@techstartup.co.kr">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">연락처</label>
+                    <input type="tel" class="form-input" value="02-1234-5678">
+                  </div>
+                  <div style="display: flex; justify-content: flex-end">
+                    <button class="btn btn-primary" onclick="showToast('계정 정보가 저장되었습니다.', 'success')">💾 저장</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 알림 설정 탭 -->
+            <div id="settings-tab-notify" class="settings-tab-content hidden">
+              <div class="card">
+                <div class="section-title" style="margin-bottom: var(--space-5)">알림 설정</div>
+                <div style="display: flex; flex-direction: column; gap: var(--space-4)">
+                  ${[
+                    ['배포 완료 알림', '채용공고 배포가 완료되면 알림을 받습니다'],
+                    ['배포 실패 알림', '배포 오류 발생 시 즉시 알림을 받습니다'],
+                    ['신규 지원자 알림', '새 지원자가 접수되면 알림을 받습니다'],
+                    ['공고 만료 임박 알림', '마감 3일 전 알림을 받습니다'],
+                    ['예산 소진 경고', '월 예산 80% 도달 시 알림을 받습니다'],
+                  ].map(([title, desc]) => `
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--space-3) 0; border-bottom: 1px solid var(--border-subtle)">
+                      <div>
+                        <div style="font-size: var(--text-sm); font-weight: 600; color: var(--text-primary)">${title}</div>
+                        <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px">${desc}</div>
+                      </div>
+                      <label class="toggle">
+                        <input type="checkbox" checked onchange="showToast('알림 설정이 변경되었습니다.', 'info')">
+                        <span class="toggle-slider"></span>
+                      </label>
+                    </div>
+                  `).join('')}
+                  <div style="display: flex; justify-content: flex-end; margin-top: var(--space-2)">
+                    <button class="btn btn-primary" onclick="showToast('알림 설정이 저장되었습니다.', 'success')">💾 저장</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /page-settings -->
+
+    </main>
+  </div><!-- /main-wrapper -->
+</div><!-- /app-wrapper -->
+
+
+<!-- ================================================
+     모달: 공고 등록/수정 (실제 사업장용)
+     ================================================ -->
+<div id="job-modal" class="modal-overlay hidden">
+  <div class="modal modal-lg" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div id="job-modal-title" class="modal-title">➕ 새 공고 등록</div>
+      <button type="button" class="btn btn-ghost btn-icon" onclick="closeModal('job-modal')">✕</button>
+    </div>
+
+    <div class="modal-body" style="gap: var(--space-5)">
+      
+      <!-- 1. 필수 정보 섹션 -->
+      <div>
+        <div class="form-section-title">📌 필수 입력 항목</div>
+        
+        <div style="display: flex; flex-direction: column; gap: var(--space-4); margin-top: var(--space-3)">
+          <!-- 공고 제목 -->
+          <div class="form-group">
+            <label class="form-label">공고 제목 <span class="required">*</span></label>
+            <input type="text" id="job-form-title" class="form-input" placeholder="예: [물류센터] 입출고 및 자재 관리 사원 모집 (초보 가능 / 주5일)">
+          </div>
+
+          <!-- 모집 직종 + 추천 칩 -->
+          <div class="form-group">
+            <label class="form-label">모집 직종 <span class="required">*</span></label>
+            <input type="text" id="job-form-category" class="form-input" placeholder="직종을 입력하거나 아래 추천 항목을 클릭하세요">
+            <div class="chip-group" id="job-category-chips">
+              <span class="chip-btn" onclick="selectCategoryChip('생산')">🏭 생산</span>
+              <span class="chip-btn" onclick="selectCategoryChip('물류')">📦 물류</span>
+              <span class="chip-btn" onclick="selectCategoryChip('건설')">🏗️ 건설</span>
+              <span class="chip-btn" onclick="selectCategoryChip('조리')">🍳 조리</span>
+              <span class="chip-btn" onclick="selectCategoryChip('청소')">🧹 청소</span>
+              <span class="chip-btn" onclick="selectCategoryChip('경비')">🛡️ 경비</span>
+              <span class="chip-btn" onclick="selectCategoryChip('사무')">💼 사무</span>
+              <span class="chip-btn" onclick="selectCategoryChip('영업')">📈 영업</span>
+              <span class="chip-btn" onclick="selectCategoryChip('기타')">✨ 기타</span>
+            </div>
+          </div>
+
+          <!-- 2열: 근무지, 모집인원 -->
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: var(--space-4)">
+            <div class="form-group">
+              <label class="form-label">근무 지역 <span class="required">*</span></label>
+              <input type="text" id="job-form-location" class="form-input" placeholder="예: 서울 강남구 테헤란로 (역삼역 도보 5분)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">모집 인원 <span class="required">*</span></label>
+              <input type="text" id="job-form-headcount" class="form-input" placeholder="예: 0명 / 2명">
+            </div>
+          </div>
+
+          <!-- 2열: 급여 (유형 + 금액), 근무형태 -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4)">
+            <div class="form-group">
+              <label class="form-label">급여 <span class="required">*</span></label>
+              <div style="display: grid; grid-template-columns: 100px 1fr; gap: var(--space-2)">
+                <select id="job-form-salary-type" class="form-select">
+                  <option value="월급" selected>월급</option>
+                  <option value="시급">시급</option>
+                  <option value="일급">일급</option>
+                  <option value="연봉">연봉</option>
+                  <option value="협의">협의</option>
+                </select>
+                <input type="text" id="job-form-salary-amount" class="form-input" placeholder="예: 2,800,000원 / 협의">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">근무 형태 <span class="required">*</span></label>
+              <select id="job-form-type" class="form-select">
+                <option value="정규직" selected>정규직</option>
+                <option value="계약직">계약직</option>
+                <option value="일용직">일용직</option>
+                <option value="단기근무">단기근무</option>
+                <option value="아르바이트">아르바이트</option>
+                <option value="기타">기타</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 2열: 근무시간, 모집 마감일 -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4)">
+            <div class="form-group">
+              <label class="form-label">근무 시간 <span class="required">*</span></label>
+              <div style="display: flex; align-items: center; gap: var(--space-2)">
+                <input type="time" id="job-form-time-start" class="form-input" value="09:00">
+                <span style="color: var(--text-muted)">~</span>
+                <input type="time" id="job-form-time-end" class="form-input" value="18:00">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">모집 마감일 <span class="required">*</span></label>
+              <input type="date" id="job-form-deadline" class="form-input">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. AI 스마트 카피 자동 작성 배너 -->
+      <div class="ai-banner-box">
+        <div>
+          <div class="ai-banner-title">✨ AI 스마트 공고 카피 자동 생성</div>
+          <div class="ai-banner-desc">입력된 공고 제목과 직종을 분석하여 상세 업무, 자격요건, 우대사항, 회사소개를 전문적으로 자동 작성합니다.</div>
+        </div>
+        <button type="button" class="btn btn-primary" style="flex-shrink: 0; background: var(--gradient-secondary)" onclick="generateAICopy()">
+          ✨ AI 카피 생성
+        </button>
+      </div>
+
+      <!-- 3. 선택 입력 항목 섹션 -->
+      <div>
+        <div class="form-section-title">📋 상세 조건 및 공고 내용 (선택)</div>
+
+        <div style="display: flex; flex-direction: column; gap: var(--space-4); margin-top: var(--space-3)">
+          <!-- 3열: 회사명, 경력, 학력 -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-3)">
+            <div class="form-group">
+              <label class="form-label">회사명</label>
+              <input type="text" id="job-form-company" class="form-input" placeholder="(주)테크스타트업">
+            </div>
+            <div class="form-group">
+              <label class="form-label">경력</label>
+              <select id="job-form-career" class="form-select">
+                <option value="경력무관" selected>경력무관</option>
+                <option value="신입">신입</option>
+                <option value="경력 (1~3년)">경력 (1~3년)</option>
+                <option value="경력 (3~5년)">경력 (3~5년)</option>
+                <option value="경력 (5년 이상)">경력 (5년 이상)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">학력</label>
+              <select id="job-form-education" class="form-select">
+                <option value="학력무관" selected>학력무관</option>
+                <option value="고등학교 졸업 이상">고등학교 졸업 이상</option>
+                <option value="대학 졸업(2,3년) 이상">대학 졸업(2,3년) 이상</option>
+                <option value="대학교 졸업(4년) 이상">대학교 졸업(4년) 이상</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 복리후생 + 추천 칩 -->
+          <div class="form-group">
+            <label class="form-label">복리후생</label>
+            <input type="text" id="job-form-benefits" class="form-input" placeholder="제공 혜택을 입력하거나 칩을 클릭해 추가하세요">
+            <div class="chip-group">
+              <span class="chip-btn" onclick="addBenefitChip('4대보험')">+ 4대보험</span>
+              <span class="chip-btn" onclick="addBenefitChip('중식제공')">+ 중식제공</span>
+              <span class="chip-btn" onclick="addBenefitChip('퇴직금')">+ 퇴직금</span>
+              <span class="chip-btn" onclick="addBenefitChip('유니폼지급')">+ 유니폼지급</span>
+              <span class="chip-btn" onclick="addBenefitChip('통근버스')">+ 통근버스</span>
+              <span class="chip-btn" onclick="addBenefitChip('연차수당')">+ 연차수당</span>
+              <span class="chip-btn" onclick="addBenefitChip('인센티브')">+ 인센티브</span>
+              <span class="chip-btn" onclick="addBenefitChip('주휴수당')">+ 주휴수당</span>
+            </div>
+          </div>
+
+          <!-- 상세 업무 내용 -->
+          <div class="form-group">
+            <label class="form-label">상세 업무 내용</label>
+            <textarea id="job-form-description" class="form-textarea" rows="4" placeholder="담당할 구체적인 업무 내용을 입력하세요. (AI 카피 생성 시 자동 작성됩니다)"></textarea>
+          </div>
+
+          <!-- 2열: 자격요건, 우대사항 -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4)">
+            <div class="form-group">
+              <label class="form-label">자격요건</label>
+              <textarea id="job-form-qualifications" class="form-textarea" rows="3" placeholder="필수 지원 요건 (성실함, 관련 자격증 등)"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">우대사항</label>
+              <textarea id="job-form-preferred" class="form-textarea" rows="3" placeholder="우대 조건 (인근 거주자, 유관 업무 경험 등)"></textarea>
+            </div>
+          </div>
+
+          <!-- 회사 소개 -->
+          <div class="form-group">
+            <label class="form-label">회사 소개</label>
+            <textarea id="job-form-company-intro" class="form-textarea" rows="2" placeholder="회사 소개 및 근무 분위기"></textarea>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 모달 푸터 버튼 바 -->
+    <div class="modal-footer" style="justify-content: space-between">
+      <button type="button" class="btn btn-secondary" onclick="closeModal('job-modal')">취소</button>
+      <div style="display: flex; gap: var(--space-2)">
+        <button type="button" class="btn btn-secondary" onclick="previewCurrentJobModal()">👁️ 미리보기</button>
+        <button type="button" class="btn btn-secondary" onclick="saveJobFromModal(true)">💾 임시저장</button>
+        <button type="button" id="job-save-btn" class="btn btn-primary" onclick="saveJobFromModal(false)">✓ 저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================
+     모달: 채용공고 상세 미리보기
+     ================================================ -->
+<div id="preview-modal" class="modal-overlay hidden">
+  <div class="modal modal-lg" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">👁️ 채용공고 실시간 미리보기</div>
+      <button type="button" class="btn btn-ghost btn-icon" onclick="closeModal('preview-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="preview-content-area" class="job-preview-card"></div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" onclick="closeModal('preview-modal')">닫기</button>
+      <button type="button" class="btn btn-primary" onclick="closeModal('preview-modal'); saveJobFromModal(false)">✓ 이 내용으로 저장</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ================================================
+     모달: 배포 플랫폼 선택
+     ================================================ -->
+<div id="deploy-modal" class="modal-overlay hidden">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div id="deploy-modal-title" class="modal-title">배포 플랫폼 선택</div>
+      <button type="button" class="btn btn-ghost btn-icon" onclick="closeModal('deploy-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: var(--space-3)">
+        배포할 플랫폼을 선택하세요. 선택된 플랫폼에 즉시 공고가 게재됩니다.
+      </div>
+      <div id="deploy-modal-platforms" style="display: flex; flex-direction: column; gap: var(--space-2)"></div>
+      <div style="padding: var(--space-3) var(--space-4); background: rgba(108,99,255,0.06); border: 1px solid rgba(108,99,255,0.15); border-radius: var(--radius-md); font-size: var(--text-xs); color: var(--text-secondary)">
+        💡 플랫폼 연동 설정에서 API 키를 먼저 등록해야 배포가 가능합니다.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" onclick="closeModal('deploy-modal')">취소</button>
+      <button type="button" id="deploy-confirm-btn" class="btn btn-primary">🚀 배포 시작</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================
+     모달: 네이버 로그인 OAuth 2.0 및 API 설정
+     ================================================ -->
+<div id="naver-auth-modal" class="modal-overlay hidden">
+  <div class="modal modal-lg" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title" style="display: flex; align-items: center; gap: 8px">
+        <span class="naver-brand-badge">NAVER</span> 네이버 계정 연결 (OAuth 2.0)
+      </div>
+      <button type="button" class="btn btn-ghost btn-icon" onclick="closeModal('naver-auth-modal')">✕</button>
+    </div>
+
+    <div class="modal-body" style="gap: var(--space-4)">
+
+      <!-- 실제 로그인 (권장) — 백엔드 서버(server 폴더)가 실행 중이어야 동작합니다 -->
+      <div class="naver-cafe-api-box" style="border-color: rgba(3,199,90,0.4)">
+        <div class="naver-cafe-api-title">
+          <span>🔐 실제 네이버 계정으로 로그인 (권장)</span>
+        </div>
+        <div style="color: var(--text-muted); line-height: 1.6">
+          아래 버튼을 누르면 네이버 로그인 창이 열립니다. 로그인 후 카페 글쓰기 권한에 동의하시면
+          백엔드 서버가 Access Token을 안전하게 저장하고 실제 게시에 사용합니다.<br>
+          <strong style="color: var(--text-secondary)">※ 이 방법을 쓰려면 먼저 <code>server</code> 폴더 안의 <code>시작.bat</code>을 실행해 백엔드 서버를 켜두셔야 합니다.</strong>
+        </div>
+        <div style="display: flex; gap: var(--space-2); margin-top: var(--space-3); flex-wrap: wrap">
+          <button type="button" class="btn btn-primary" style="background: #03C75A; border-color: #03C75A; color: #fff" onclick="startNaverLogin()">🔑 네이버 계정으로 로그인</button>
+          <button type="button" class="btn btn-secondary" onclick="refreshNaverConnectionStatus()">🔄 연결 상태 새로고침</button>
+          <button type="button" class="btn btn-ghost" onclick="disconnectNaverAccount()" style="color: var(--accent-danger, #f43f5e)">🔌 연결 해제</button>
+        </div>
+        <div id="naver-real-connection-status" style="margin-top: var(--space-2); font-size: 12px; color: var(--text-muted)"></div>
+      </div>
+
+      <div class="form-section-title" style="margin-top: var(--space-2)">🧪 수동/테스트 입력 (선택 — 실제 게시에는 사용되지 않습니다)</div>
+
+      <div style="background: rgba(3, 199, 90, 0.08); border: 1px solid rgba(3, 199, 90, 0.25); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); font-size: var(--text-xs); color: var(--text-secondary); line-height: 1.6">
+        💡 <strong>네이버 개발자 센터</strong>(<a href="https://developers.naver.com" target="_blank" style="color: #03C75A; text-decoration: underline">developers.naver.com</a>)에서 발급받은 애플리케이션 정보를 아래에 입력해두면 참고용으로 저장됩니다. <br>
+        보안을 위해 인증 정보는 코드에 하드코딩되지 않으며, 사용자의 로컬 브라우저 보안 스토리지에만 저장됩니다. <strong>실제 게시 가능 여부는 위쪽 "실제 로그인" 연결 상태로만 결정됩니다.</strong>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Client ID <span class="required">*</span></label>
+        <input type="text" id="naver-client-id" class="form-input" placeholder="네이버 애플리케이션 Client ID 입력">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Client Secret <span class="required">*</span></label>
+        <div class="api-key-input-group">
+          <input type="password" id="naver-client-secret" class="form-input" placeholder="Client Secret 입력">
+          <span class="api-key-toggle-btn" onclick="toggleApiKeyVisibility('naver-client-secret', this)">보기</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Callback URL (Redirect URI)</label>
+        <input type="text" id="naver-redirect-uri" class="form-input" value="http://localhost:3000/callback" placeholder="네이버 개발자 센터에 등록된 Callback URL">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Access Token (사용자 접근 토큰)</label>
+        <div class="api-key-input-group">
+          <input type="password" id="naver-access-token" class="form-input" placeholder="OAuth 2.0 발급 토큰 또는 모의 테스트용 토큰 입력">
+          <span class="api-key-toggle-btn" onclick="toggleApiKeyVisibility('naver-access-token', this)">보기</span>
+        </div>
+      </div>
+
+      <div id="naver-auth-test-result"></div>
+    </div>
+
+    <div class="modal-footer" style="justify-content: space-between">
+      <button type="button" class="btn btn-secondary" onclick="loadSampleNaverAuth()">🧪 모의 테스트 계정으로 자동 채우기</button>
+      <div style="display: flex; gap: var(--space-2)">
+        <button type="button" class="btn btn-secondary" onclick="testNaverConnection()">🔍 연결 상태 검증</button>
+        <button type="button" class="btn btn-primary" style="background: #03C75A; border-color: #03C75A; color: #fff" onclick="saveNaverAuthConfig()">💾 설정 저장 및 연결</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================
+     모달: 네이버 카페 글쓰기 전 미리보기 및 게시 실행
+     ================================================ -->
+<div id="naver-cafe-publish-modal" class="modal-overlay hidden">
+  <div class="modal modal-lg" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title" style="display: flex; align-items: center; gap: 8px">
+        <span class="naver-brand-badge">CAFE API</span> 네이버 카페 게시 전 최종 확인
+      </div>
+      <button type="button" class="btn btn-ghost btn-icon" onclick="closeModal('naver-cafe-publish-modal')">✕</button>
+    </div>
+
+    <div class="modal-body" style="gap: var(--space-4)">
+      
+      <!-- API 규격 안내 박스 -->
+      <div class="naver-cafe-api-box">
+        <div class="naver-cafe-api-title">
+          <span>📡 네이버 카페 공식 글쓰기 API 연동</span>
+          <span style="font-family: var(--font-mono); font-size: 11px">POST /v1/cafe/{clubid}/menu/{menuid}/articles</span>
+        </div>
+        <div style="color: var(--text-muted)">선택한 카페와 게시판으로 아래 광고문구를 게시합니다. 실제 게시 전 내용을 검토하세요.</div>
+      </div>
+
+      <!-- 카페 & 게시판 선택 그리드 -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4)">
+        <div class="form-group">
+          <label class="form-label">대상 네이버 카페 선택 (Club ID) <span class="required">*</span></label>
+          <select id="naver-publish-club" class="form-select" onchange="onPublishClubChanged(this.value)">
+            <option value="29841029" selected>☕ 수도권 알바/구인구직 모임 (ID: 29841029)</option>
+            <option value="30194812">🏭 전국 생산/물류 일자리 구인 (ID: 30194812)</option>
+            <option value="28194018">🏪 동네 구인구직 벼룩시장 (ID: 28194018)</option>
+            <option value="custom">✏️ 직접 Club ID 입력</option>
+          </select>
+          <input type="text" id="naver-custom-club-id" class="form-input hidden" style="margin-top: 6px" placeholder="숫자로 된 카페 Club ID 직접 입력">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">게시판 선택 (Menu ID) <span class="required">*</span></label>
+          <select id="naver-publish-menu" class="form-select" onchange="onPublishMenuChanged(this.value)">
+            <option value="15" selected>📋 [직원/알바 채용] (Menu ID: 15)</option>
+            <option value="22">💼 [구인구직/일자리정보] (Menu ID: 22)</option>
+            <option value="1">💬 [자유게시판] (Menu ID: 1)</option>
+            <option value="custom">✏️ 직접 Menu ID 입력</option>
+          </select>
+          <input type="text" id="naver-custom-menu-id" class="form-input hidden" style="margin-top: 6px" placeholder="숫자로 된 게시판 Menu ID 직접 입력">
+        </div>
+      </div>
+
+      <!-- 글 제목 수정란 -->
+      <div class="form-group">
+        <label class="form-label">게시글 제목 (subject) <span class="required">*</span></label>
+        <input type="text" id="naver-publish-subject" class="form-input" oninput="updateNaverCafePreviewLive()">
+      </div>
+
+      <!-- 실시간 네이버 카페 글 포맷 미리보기 영역 -->
+      <div>
+        <label class="form-label" style="margin-bottom: 6px">👁️ 네이버 카페 실제 화면 미리보기</label>
+        <div class="naver-cafe-preview-box">
+          <div class="naver-cafe-preview-header">
+            <div class="naver-cafe-preview-clubname" id="preview-cafe-clubname">수도권 알바/구인구직 모임 ＞ [직원/알바 채용]</div>
+            <div class="naver-cafe-preview-subject" id="preview-cafe-subject">제목이 표시됩니다</div>
+            <div class="naver-cafe-preview-meta">
+              <span>작성자: <strong style="color: #03C75A">채용담당자</strong></span>
+              <span>작성일시: <span id="preview-cafe-time">방금 전</span></span>
+              <span>조회수: 1</span>
+            </div>
+          </div>
+          <div class="naver-cafe-preview-content" id="preview-cafe-content">내용이 표시됩니다.</div>
+        </div>
+      </div>
+
+      <!-- API 요청 상태 출력창 (진행 시) -->
+      <div id="naver-publish-result-box"></div>
+
+    </div>
+
+    <div class="modal-footer" style="justify-content: space-between">
+      <button type="button" class="btn btn-secondary" onclick="closeModal('naver-cafe-publish-modal')">취소</button>
+      <div style="display: flex; gap: var(--space-2)">
+        <button type="button" id="btn-naver-cafe-publish-action" class="btn btn-primary" style="background: #03C75A; border-color: #03C75A; color: #ffffff" onclick="executeNaverCafePublish()">
+          🚀 네이버 카페에 게시
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+<!-- JavaScript -->
+<script src="js/data.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/jobs.js"></script>
+<script src="js/adcenter.js"></script>
+<script src="js/deploy.js"></script>
+<script src="js/analytics.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
+
