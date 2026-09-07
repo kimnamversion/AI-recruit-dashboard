@@ -200,12 +200,25 @@ const AppState = {
     if (this.jobSearch) {
       const q = this.jobSearch.toLowerCase();
       jobs = jobs.filter(j =>
-        j.title.toLowerCase().includes(q) ||
-        j.company.toLowerCase().includes(q) ||
-        j.tags.some(t => t.toLowerCase().includes(q))
+        (j.title || '').toLowerCase().includes(q) ||
+        (j.company || '').toLowerCase().includes(q) ||
+        (j.tags || []).some(t => (t || '').toLowerCase().includes(q))
       );
     }
     return jobs;
+  },
+
+  async loadJobsFromServer() {
+    try {
+      const res = await fetch('/api/jobs');
+      if (!res.ok) throw new Error(`서버 응답 오류 (HTTP ${res.status})`);
+      this.jobs = await res.json();
+    } catch (e) {
+      console.warn('채용공고 목록을 서버에서 불러오지 못했습니다:', e);
+      if (typeof showToast === 'function') {
+        showToast('채용공고 목록을 서버에서 불러오지 못했습니다. 서버 연결을 확인해주세요.', 'warning');
+      }
+    }
   },
 };
 
@@ -214,7 +227,6 @@ const AppState = {
    ================================================ */
 function saveToStorage() {
   try {
-    localStorage.setItem('adDashboard_jobs', JSON.stringify(AppState.jobs));
     localStorage.setItem('adDashboard_platforms', JSON.stringify(AppState.platforms));
   } catch (e) {
     console.warn('localStorage 저장 실패:', e);
@@ -223,8 +235,6 @@ function saveToStorage() {
 
 function loadFromStorage() {
   try {
-    const savedJobs = localStorage.getItem('adDashboard_jobs');
-    if (savedJobs) AppState.jobs = JSON.parse(savedJobs);
     const savedPlatforms = localStorage.getItem('adDashboard_platforms');
     if (savedPlatforms) AppState.platforms = JSON.parse(savedPlatforms);
   } catch (e) {

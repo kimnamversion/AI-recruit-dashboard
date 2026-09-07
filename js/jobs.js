@@ -7,7 +7,8 @@ let currentEditingJobId = null;
 /* ================================================
    공고 관리 초기화
    ================================================ */
-function initJobs() {
+async function initJobs() {
+  await AppState.loadJobsFromServer();
   renderJobsPage();
   bindJobsEvents();
 }
@@ -80,11 +81,14 @@ function renderJobsList() {
       </div>
 
       <div class="job-card-platforms">
-        ${(job.platforms || []).map(p => `
-          <span class="badge badge-${p}">
-            ${p === 'jobkorea' ? '잡코리아' : p === 'saramin' ? '사람인' : '워크넷'}
+        ${(job.platforms || []).map(p => {
+          const safeP = ['jobkorea', 'saramin', 'worknet'].includes(p) ? p : 'inactive';
+          return `
+          <span class="badge badge-${safeP}">
+            ${p === 'jobkorea' ? '잡코리아' : p === 'saramin' ? '사람인' : p === 'worknet' ? '워크넷' : '알 수 없음'}
           </span>
-        `).join('')}
+        `;
+        }).join('')}
         ${(!job.platforms || job.platforms.length === 0) ? '<span class="badge badge-inactive">미배포</span>' : ''}
         ${job.aiCopy ? '<span class="badge badge-info">✨ AI카피</span>' : ''}
       </div>
@@ -334,7 +338,7 @@ function getFormDataFromModal() {
 /* ================================================
    저장 처리 (임시저장 및 등록)
    ================================================ */
-function saveJobFromModal(isDraft = false) {
+async function saveJobFromModal(isDraft = false) {
   const data = getFormDataFromModal();
 
   // 필수 항목 검증
@@ -361,71 +365,95 @@ function saveJobFromModal(isDraft = false) {
 
   const existingJob = currentEditingJobId ? AppState.jobs.find(j => j.id === currentEditingJobId) : null;
 
-  if (existingJob) {
-    // 기존 공고 수정
-    existingJob.title = data.title;
-    existingJob.category = data.category;
-    existingJob.department = data.category;
-    existingJob.company = data.company;
-    existingJob.location = data.location;
-    existingJob.headcount = data.headcount;
-    existingJob.salary = data.salary;
-    existingJob.type = data.type;
-    existingJob.workTime = data.workTime;
-    existingJob.deadline = data.deadline;
-    existingJob.career = data.career;
-    existingJob.education = data.education;
-    existingJob.benefits = data.benefits;
-    existingJob.description = data.description;
-    existingJob.qualifications = data.qualifications;
-    existingJob.preferred = data.preferred;
-    existingJob.companyIntro = data.companyIntro;
-    if (isDraft) existingJob.status = 'draft';
-  } else {
-    // 새 공고 생성 (기본 status: 'draft')
-    const newJob = {
-      id: 'JOB-' + String(Date.now()).slice(-4),
-      title: data.title,
-      category: data.category,
-      department: data.category,
-      company: data.company,
-      location: data.location,
-      headcount: data.headcount,
-      salary: data.salary,
-      type: data.type,
-      workTime: data.workTime,
-      deadline: data.deadline,
-      career: data.career,
-      education: data.education,
-      benefits: data.benefits,
-      description: data.description,
-      qualifications: data.qualifications,
-      preferred: data.preferred,
-      companyIntro: data.companyIntro,
-      status: 'draft', // 새 공고는 기본 임시저장
-      platforms: [],
-      views: 0,
-      applicants: 0,
-      createdAt: new Date().toISOString().split('T')[0],
-      deployedAt: null,
-      tags: [data.category, data.type, data.career].filter(Boolean),
-      aiCopy: !!data.description,
-    };
-    AppState.jobs.unshift(newJob);
+  const payload = existingJob
+    ? {
+        ...existingJob,
+        title: data.title,
+        category: data.category,
+        department: data.category,
+        company: data.company,
+        location: data.location,
+        headcount: data.headcount,
+        salary: data.salary,
+        type: data.type,
+        workTime: data.workTime,
+        deadline: data.deadline,
+        career: data.career,
+        education: data.education,
+        benefits: data.benefits,
+        description: data.description,
+        qualifications: data.qualifications,
+        preferred: data.preferred,
+        companyIntro: data.companyIntro,
+        status: isDraft ? 'draft' : existingJob.status,
+      }
+    : {
+        title: data.title,
+        category: data.category,
+        department: data.category,
+        company: data.company,
+        location: data.location,
+        headcount: data.headcount,
+        salary: data.salary,
+        type: data.type,
+        workTime: data.workTime,
+        deadline: data.deadline,
+        career: data.career,
+        education: data.education,
+        benefits: data.benefits,
+        description: data.description,
+        qualifications: data.qualifications,
+        preferred: data.preferred,
+        companyIntro: data.companyIntro,
+        status: 'draft', // 새 공고는 기본 임시저장
+        platforms: [],
+        views: 0,
+        applicants: 0,
+        createdAt: new Date().toISOString().split('T')[0],
+        deployedAt: null,
+        tags: [data.category, data.type, data.career].filter(Boolean),
+        aiCopy: !!data.description,
+      };
+
+  const saveBtn = document.getElementById('job-save-btn');
+  if (saveBtn) saveBtn.disabled = true;
+
+  try {
+    const url = existingJob ? `/api/jobs/${existingJob.id}` : '/api/jobs';
+    const method = existingJob ? 'PUT' : 'POST';
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `서버 응답 오류 (HTTP ${res.status})`);
+    }
+    const savedJob = await res.json();
+
+    if (existingJob) {
+      Object.assign(existingJob, savedJob);
+    } else {
+      AppState.jobs.unshift(savedJob);
+    }
+
+    closeModal('job-modal');
+    renderJobsPage();
+    if (typeof renderRecentJobs === 'function') renderRecentJobs();
+    if (typeof renderKPICards === 'function') renderKPICards();
+
+    showToast(
+      isDraft
+        ? '💾 공고가 임시저장되었습니다.'
+        : '✅ 공고가 저장되었습니다! (임시저장 상태)',
+      'success'
+    );
+  } catch (e) {
+    showToast(`❌ 저장에 실패했습니다: ${e.message}`, 'danger');
+  } finally {
+    if (saveBtn) saveBtn.disabled = false;
   }
-
-  saveToStorage();
-  closeModal('job-modal');
-  renderJobsPage();
-  if (typeof renderRecentJobs === 'function') renderRecentJobs();
-  if (typeof renderKPICards === 'function') renderKPICards();
-
-  showToast(
-    isDraft
-      ? '💾 공고가 임시저장되었습니다.'
-      : '✅ 공고가 저장되었습니다! (임시저장 상태)',
-    'success'
-  );
 }
 
 /* ================================================
@@ -552,60 +580,105 @@ function openDeployModal(job) {
 
   document.getElementById('deploy-modal-platforms').innerHTML = platformsHtml;
 
-  document.getElementById('deploy-confirm-btn').onclick = () => {
+  document.getElementById('deploy-confirm-btn').onclick = async () => {
     const selected = [...document.querySelectorAll('input[name="deploy-platform"]:checked')].map(el => el.value);
     if (selected.length === 0) {
       showToast('최소 1개의 배포 플랫폼을 선택하세요.', 'warning');
       return;
     }
-    job.status = 'active';
-    job.platforms = selected;
-    job.deployedAt = new Date().toISOString().split('T')[0];
-    saveToStorage();
-    closeModal('deploy-modal');
-    renderJobsList();
-    renderJobStats();
-    if (typeof renderRecentJobs === 'function') renderRecentJobs();
-    if (typeof renderKPICards === 'function') renderKPICards();
-    if (typeof renderPlatformCards === 'function') renderPlatformCards();
-    showToast(`"${job.title}" 공고가 배포되었습니다! 🚀`, 'success');
 
-    AppState.notifications.unshift({
-      id: 'N' + Date.now(),
-      type: 'success',
-      icon: '✅',
-      title: '배포 완료',
-      desc: `${job.title} 공고가 ${selected.length}개 플랫폼에 게재되었습니다.`,
-      time: '방금 전',
-      read: false,
-    });
-    if (typeof updateNotifBadge === 'function') updateNotifBadge();
+    const payload = {
+      ...job,
+      status: 'active',
+      platforms: selected,
+      deployedAt: new Date().toISOString().split('T')[0],
+    };
+
+    try {
+      const res = await fetch(`/api/jobs/${job.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `서버 응답 오류 (HTTP ${res.status})`);
+      }
+      const savedJob = await res.json();
+      Object.assign(job, savedJob);
+
+      closeModal('deploy-modal');
+      renderJobsList();
+      renderJobStats();
+      if (typeof renderRecentJobs === 'function') renderRecentJobs();
+      if (typeof renderKPICards === 'function') renderKPICards();
+      if (typeof renderPlatformCards === 'function') renderPlatformCards();
+      showToast(`"${job.title}" 공고가 배포되었습니다! 🚀`, 'success');
+
+      AppState.notifications.unshift({
+        id: 'N' + Date.now(),
+        type: 'success',
+        icon: '✅',
+        title: '배포 완료',
+        desc: `${job.title} 공고가 ${selected.length}개 플랫폼에 게재되었습니다.`,
+        time: '방금 전',
+        read: false,
+      });
+      if (typeof updateNotifBadge === 'function') updateNotifBadge();
+    } catch (e) {
+      showToast(`❌ 배포 처리 중 오류: ${e.message}`, 'danger');
+    }
   };
 
   modal.classList.remove('hidden');
 }
 
-function toggleJobStatus(jobId, newStatus) {
+async function toggleJobStatus(jobId, newStatus) {
   const job = AppState.jobs.find(j => j.id === jobId);
   if (!job) return;
-  job.status = newStatus;
-  saveToStorage();
-  renderJobsList();
-  renderJobStats();
-  if (typeof renderRecentJobs === 'function') renderRecentJobs();
-  if (typeof renderKPICards === 'function') renderKPICards();
-  showToast(`공고 상태가 "${newStatus === 'active' ? '진행 중' : '일시정지'}"으로 변경되었습니다.`, 'info');
+
+  const previousStatus = job.status;
+  try {
+    const res = await fetch(`/api/jobs/${jobId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...job, status: newStatus }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `서버 응답 오류 (HTTP ${res.status})`);
+    }
+    const savedJob = await res.json();
+    Object.assign(job, savedJob);
+    renderJobsList();
+    renderJobStats();
+    if (typeof renderRecentJobs === 'function') renderRecentJobs();
+    if (typeof renderKPICards === 'function') renderKPICards();
+    showToast(`공고 상태가 "${newStatus === 'active' ? '진행 중' : '일시정지'}"으로 변경되었습니다.`, 'info');
+  } catch (e) {
+    job.status = previousStatus;
+    showToast(`❌ 상태 변경에 실패했습니다: ${e.message}`, 'danger');
+  }
 }
 
-function deleteJob(jobId) {
+async function deleteJob(jobId) {
   if (!confirm('이 공고를 정말 삭제하시겠습니까?')) return;
-  AppState.jobs = AppState.jobs.filter(j => j.id !== jobId);
-  saveToStorage();
-  renderJobsList();
-  renderJobStats();
-  if (typeof renderRecentJobs === 'function') renderRecentJobs();
-  if (typeof renderKPICards === 'function') renderKPICards();
-  showToast('공고가 삭제되었습니다.', 'info');
+
+  try {
+    const res = await fetch(`/api/jobs/${jobId}`, { method: 'DELETE' });
+    if (!res.ok && res.status !== 404) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `서버 응답 오류 (HTTP ${res.status})`);
+    }
+    AppState.jobs = AppState.jobs.filter(j => j.id !== jobId);
+    renderJobsList();
+    renderJobStats();
+    if (typeof renderRecentJobs === 'function') renderRecentJobs();
+    if (typeof renderKPICards === 'function') renderKPICards();
+    showToast('공고가 삭제되었습니다.', 'info');
+  } catch (e) {
+    showToast(`❌ 삭제에 실패했습니다: ${e.message}`, 'danger');
+  }
 }
 
 function escapeHtml(str) {

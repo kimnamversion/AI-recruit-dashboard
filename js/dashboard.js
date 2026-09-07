@@ -170,22 +170,28 @@ function renderRecentJobs() {
     .filter(j => j.status !== 'ended')
     .slice(0, 5);
 
-  container.innerHTML = recentJobs.map(job => `
+  container.innerHTML = recentJobs.map(job => {
+    const platforms = Array.isArray(job.platforms) ? job.platforms : [];
+    const knownPlatforms = ['jobkorea', 'saramin', 'worknet'];
+    return `
     <tr>
       <td>
         <div class="job-title-cell">
-          <div class="job-title-text">${job.title}</div>
-          <div class="job-company-text">${job.department} · ${job.location}</div>
+          <div class="job-title-text">${escapeHtml(job.title || '')}</div>
+          <div class="job-company-text">${escapeHtml(job.department || '')} · ${escapeHtml(job.location || '')}</div>
         </div>
       </td>
       <td>
         <div class="platform-badges">
-          ${job.platforms.map(p => `
-            <span class="badge badge-${p}">
-              ${p === 'jobkorea' ? '잡코리아' : p === 'saramin' ? '사람인' : '워크넷'}
+          ${platforms.map(p => {
+            const safeP = knownPlatforms.includes(p) ? p : 'inactive';
+            return `
+            <span class="badge badge-${safeP}">
+              ${p === 'jobkorea' ? '잡코리아' : p === 'saramin' ? '사람인' : p === 'worknet' ? '워크넷' : '알 수 없음'}
             </span>
-          `).join('')}
-          ${job.platforms.length === 0 ? '<span class="badge badge-inactive">미배포</span>' : ''}
+          `;
+          }).join('')}
+          ${platforms.length === 0 ? '<span class="badge badge-inactive">미배포</span>' : ''}
         </div>
       </td>
       <td>
@@ -200,13 +206,13 @@ function renderRecentJobs() {
         </span>
       </td>
       <td style="font-family: var(--font-latin); font-weight: 600; color: var(--text-primary)">
-        ${job.applicants.toLocaleString()}명
+        ${(job.applicants || 0).toLocaleString()}명
       </td>
       <td style="font-family: var(--font-latin); color: var(--text-secondary)">
-        ${job.views.toLocaleString()}
+        ${(job.views || 0).toLocaleString()}
       </td>
       <td style="font-size: var(--text-xs); color: var(--text-muted)">
-        ~${job.deadline}
+        ~${escapeHtml(job.deadline || '상시채용')}
       </td>
       <td>
         <div style="display: flex; gap: 4px">
@@ -221,7 +227,8 @@ function renderRecentJobs() {
         </div>
       </td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 }
 
 /* ================================================

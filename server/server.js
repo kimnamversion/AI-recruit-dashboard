@@ -16,6 +16,8 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
+const { Pool } = require('pg');
 
 const app = express();
 app.use(express.json());
@@ -23,6 +25,12 @@ app.use(express.urlencoded({ extended: true }));
 
 // 어떤 방식으로 대시보드에 접속하든(파일 직접 열기 포함) API 호출이 막히지 않도록 허용
 app.use((req, res, next) => {
+  // GET/POST/OPTIONS만 허용한다. PUT/DELETE까지 크로스오리진에 열어두면
+  // 인증이 없는 /api/jobs API에 대해 어떤 사이트든 방문자의 브라우저를 통해
+  // preflight를 통과시켜 임의로 쓰기/삭제 요청을 보낼 수 있게 된다.
+  // 이 앱의 프론트엔드는 이 서버와 동일 출처(same-origin)로 서빙되므로
+  // PUT/DELETE 요청에는 애초에 CORS 프리플라이트가 적용되지 않아
+  // 이 제한으로 인한 영향이 없다.
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type');
@@ -36,6 +44,47 @@ const CLIENT_SECRET = process.env.NAVER_CLIENT_SECRET || '';
 const REDIRECT_URI = process.env.NAVER_REDIRECT_URI || `http://localhost:${PORT}/callback`;
 
 const TOKEN_FILE = path.join(__dirname, 'naver_token.json');
+
+// ================================================
+// 채용공고 데이터 저장용 Postgres 연결
+// DATABASE_URL이 없으면 pool은 null이며, /api/jobs 관련 라우트는
+// requireDb 미들웨어가 "설정되지 않음" 오류로 안전하게 막는다.
+// ================================================
+const DATABASE_URL = process.env.DATABASE_URL || '';
+const pool = DATABASE_URL
+  ? new Pool({
+      connectionString: DATABASE_URL,
+      // Render Postgres는 SSL이 필요하지만, 로컬 개발용 Postgres는 보통 SSL이 없다.
+      ssl: /localhost|127\.0\.0\.1/.test(DATABASE_URL) ? false : { rejectUnauthorized: false },
+    })
+  : null;
+
+// 유휴 커넥션에서 예기치 않은 오류가 발생했을 때(예: Postgres 재시작, 연결 리셋)
+// 프로세스 크래시를 방지하고 로그에 기록한다.
+if (pool) {
+  pool.on('error', (err) => {
+    console.error('⚠️  Postgres 커넥션 풀에서 예기치 않은 오류가 발생했습니다:', err.message);
+  });
+}
+
+function requireDb(req, res, next) {
+  if (!pool) {
+    return res.status(500).json({
+      error: 'DATABASE_URL이 설정되지 않아 채용공고 저장 기능을 사용할 수 없습니다. server/.env 파일을 확인해주세요.',
+    });
+  }
+  next();
+}
+
+async function ensureJobsTable() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS jobs (
+      id TEXT PRIMARY KEY,
+      data JSONB NOT NULL,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `);
+}
 
 function loadToken() {
   try {
@@ -59,11 +108,23 @@ function clearToken() {
 }
 
 // ================================================
-// 정적 파일 서빙: 프로젝트 루트(index.html, css/, js/)를
-// http://localhost:3000/ 로 그대로 제공한다.
+// 정적 파일 서빙: 프론트엔드가 실제로 필요로 하는 파일만
+// 명시적으로 제공한다 (index.html, css/, js/).
+//
+// 주의: 예전에는 프로젝트 루트 전체(express.static(PROJECT_ROOT))를
+// 서빙했는데, 이 경우 server/naver_token.json(실제 네이버 Access
+// Token이 저장된 파일)이나 server/.env 같은 민감한 파일까지
+// http://localhost:PORT/server/... 로 그대로 다운로드가 가능했다.
+// 이는 이 파일 상단 주석의 "Access Token은 브라우저로 절대 넘기지
+// 않는다"는 원칙을 정면으로 위반하는 것이므로, server/ 디렉터리는
+// 절대 정적 서빙 대상에 포함하지 않는다.
 // ================================================
 const PROJECT_ROOT = path.join(__dirname, '..');
-app.use(express.static(PROJECT_ROOT));
+app.use('/css', express.static(path.join(PROJECT_ROOT, 'css')));
+app.use('/js', express.static(path.join(PROJECT_ROOT, 'js')));
+app.get(['/', '/index.html'], (req, res) => {
+  res.sendFile(path.join(PROJECT_ROOT, 'index.html'));
+});
 
 // ================================================
 // 1) 네이버 로그인 시작
@@ -202,6 +263,59 @@ app.post('/api/naver/cafe/publish', async (req, res) => {
   }
 });
 
+// ================================================
+// 6) 채용공고 CRUD (Postgres 기반, 모든 접속자가 같은 목록을 공유)
+// ================================================
+app.get('/api/jobs', requireDb, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT id, data FROM jobs ORDER BY updated_at DESC');
+    res.json(result.rows.map(row => ({ id: row.id, ...row.data })));
+  } catch (e) {
+    res.status(500).json({ error: `채용공고 목록 조회 중 오류: ${e.message}` });
+  }
+});
+
+app.post('/api/jobs', requireDb, async (req, res) => {
+  try {
+    const id = crypto.randomUUID();
+    const data = req.body || {};
+    const { id: _ignoredId, ...jobData } = data;
+    await pool.query('INSERT INTO jobs (id, data, updated_at) VALUES ($1, $2, now())', [id, jobData]);
+    res.status(201).json({ id, ...jobData });
+  } catch (e) {
+    res.status(500).json({ error: `채용공고 생성 중 오류: ${e.message}` });
+  }
+});
+
+app.put('/api/jobs/:id', requireDb, async (req, res) => {
+  try {
+    const data = req.body || {};
+    const { id: _ignoredId, ...jobData } = data;
+    const result = await pool.query(
+      'UPDATE jobs SET data = $2, updated_at = now() WHERE id = $1 RETURNING id, data',
+      [req.params.id, jobData]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: '해당 id의 공고를 찾을 수 없습니다.' });
+    }
+    res.json({ id: result.rows[0].id, ...result.rows[0].data });
+  } catch (e) {
+    res.status(500).json({ error: `채용공고 수정 중 오류: ${e.message}` });
+  }
+});
+
+app.delete('/api/jobs/:id', requireDb, async (req, res) => {
+  try {
+    const result = await pool.query('DELETE FROM jobs WHERE id = $1', [req.params.id]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: '해당 id의 공고를 찾을 수 없습니다.' });
+    }
+    res.status(204).end();
+  } catch (e) {
+    res.status(500).json({ error: `채용공고 삭제 중 오류: ${e.message}` });
+  }
+});
+
 function escapeHtmlServer(str) {
   return String(str)
     .replace(/&/g, '&amp;')
@@ -209,15 +323,30 @@ function escapeHtmlServer(str) {
     .replace(/>/g, '&gt;');
 }
 
-app.listen(PORT, () => {
-  console.log('');
-  console.log(`✅ 서버가 실행되었습니다: http://localhost:${PORT}`);
-  console.log('   브라우저에서 위 주소로 접속해서 대시보드를 사용하세요.');
-  console.log('   (이 창을 닫으면 서버도 함께 종료됩니다)');
-  console.log('');
-  if (!CLIENT_ID || !CLIENT_SECRET) {
-    console.log('⚠️  아직 .env에 NAVER_CLIENT_ID / NAVER_CLIENT_SECRET이 설정되지 않았습니다.');
-    console.log('    네이버 개발자센터에서 발급받은 값을 server/.env 파일에 입력해주세요.');
-    console.log('');
+async function start() {
+  if (pool) {
+    try {
+      await ensureJobsTable();
+      console.log('✅ Postgres 연결 및 jobs 테이블 준비 완료');
+    } catch (e) {
+      console.log('⚠️  DATABASE_URL은 설정되어 있지만 Postgres 연결/테이블 생성에 실패했습니다:', e.message);
+    }
+  } else {
+    console.log('⚠️  DATABASE_URL이 설정되지 않아 채용공고 저장 API(/api/jobs)가 비활성화됩니다.');
   }
-});
+
+  app.listen(PORT, () => {
+    console.log('');
+    console.log(`✅ 서버가 실행되었습니다: http://localhost:${PORT}`);
+    console.log('   브라우저에서 위 주소로 접속해서 대시보드를 사용하세요.');
+    console.log('   (이 창을 닫으면 서버도 함께 종료됩니다)');
+    console.log('');
+    if (!CLIENT_ID || !CLIENT_SECRET) {
+      console.log('⚠️  아직 .env에 NAVER_CLIENT_ID / NAVER_CLIENT_SECRET이 설정되지 않았습니다.');
+      console.log('    네이버 개발자센터에서 발급받은 값을 server/.env 파일에 입력해주세요.');
+      console.log('');
+    }
+  });
+}
+
+start();
