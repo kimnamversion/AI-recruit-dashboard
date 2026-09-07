@@ -7,7 +7,8 @@ let currentEditingJobId = null;
 /* ================================================
    공고 관리 초기화
    ================================================ */
-function initJobs() {
+async function initJobs() {
+  await AppState.loadJobsFromServer();
   renderJobsPage();
   bindJobsEvents();
 }

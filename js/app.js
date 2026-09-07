@@ -5,10 +5,11 @@
 /* ================================================
    앱 초기화
    ================================================ */
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   loadFromStorage();
-  initRouter();
   initToastSystem();
+  await AppState.loadJobsFromServer();
+  initRouter();
   navigateTo('dashboard');
   updateNotifBadge();
 });
