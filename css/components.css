@@ -981,7 +981,7 @@ table.data-table {
   position: relative;
 }
 
-[data-tooltip]::after {
+[data-tooltip]::before {
   content: attr(data-tooltip);
   position: absolute;
   bottom: calc(100% + 8px);
@@ -1001,6 +1001,6 @@ table.data-table {
   box-shadow: var(--shadow-md);
 }
 
-[data-tooltip]:hover::after {
+[data-tooltip]:hover::before {
   opacity: 1;
 }
