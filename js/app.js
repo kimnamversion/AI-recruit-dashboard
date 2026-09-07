@@ -8,8 +8,8 @@
 document.addEventListener('DOMContentLoaded', async () => {
   loadFromStorage();
   initToastSystem();
-  await AppState.loadJobsFromServer();
   initRouter();
+  await AppState.loadJobsFromServer();
   navigateTo('dashboard');
   updateNotifBadge();
 });
