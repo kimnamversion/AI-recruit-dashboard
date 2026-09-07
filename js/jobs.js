@@ -5,6 +5,34 @@
 let currentEditingJobId = null;
 
 /* ================================================
+   숫자 입력 포맷 헬퍼 (모집 인원 / 급여 금액)
+   ================================================ */
+function extractDigits(value) {
+  return (value || '').replace(/[^0-9]/g, '');
+}
+
+function formatThousands(digits) {
+  return digits ? Number(digits).toLocaleString('ko-KR') : '';
+}
+
+function handleNumericFormatInput(e) {
+  e.target.value = formatThousands(extractDigits(e.target.value));
+}
+
+function handleSalaryTypeChange() {
+  const typeSelect = document.getElementById('job-form-salary-type');
+  const amountInput = document.getElementById('job-form-salary-amount');
+  const unitLabel = document.getElementById('job-form-salary-unit');
+  if (!typeSelect || !amountInput) return;
+
+  const isNegotiable = typeSelect.value === '협의';
+  amountInput.disabled = isNegotiable;
+  amountInput.placeholder = isNegotiable ? '협의' : '예: 2800000';
+  if (isNegotiable) amountInput.value = '';
+  if (unitLabel) unitLabel.style.opacity = isNegotiable ? '0.4' : '1';
+}
+
+/* ================================================
    공고 관리 초기화
    ================================================ */
 async function initJobs() {
@@ -166,6 +194,13 @@ function bindJobsEvents() {
       }
     });
   }
+
+  // 모집 인원 / 급여 금액: 숫자만 입력받아 천단위 콤마 자동 서식 적용
+  const headcountInput = document.getElementById('job-form-headcount');
+  if (headcountInput) headcountInput.addEventListener('input', handleNumericFormatInput);
+
+  const salaryAmountInput = document.getElementById('job-form-salary-amount');
+  if (salaryAmountInput) salaryAmountInput.addEventListener('input', handleNumericFormatInput);
 }
 
 
@@ -224,21 +259,24 @@ function openJobModal(job = null) {
   setVal('job-form-category', job?.category || job?.department || '');
   setVal('job-form-company', job?.company || '(주)테크스타트업');
   setVal('job-form-location', job?.location || '서울 강남구 테헤란로');
-  setVal('job-form-headcount', job?.headcount || '1명');
+  const headcountDigits = extractDigits(job?.headcount);
+  setVal('job-form-headcount', headcountDigits ? formatThousands(headcountDigits) : '1');
 
   // 급여 분리 파싱
   let salaryType = '월급';
-  let salaryAmount = '2,800,000원';
+  let salaryAmount = '2,800,000';
   if (job?.salary) {
     if (job.salary.includes('시급')) { salaryType = '시급'; salaryAmount = job.salary.replace('시급', '').trim(); }
     else if (job.salary.includes('일급')) { salaryType = '일급'; salaryAmount = job.salary.replace('일급', '').trim(); }
     else if (job.salary.includes('월급')) { salaryType = '월급'; salaryAmount = job.salary.replace('월급', '').trim(); }
     else if (job.salary.includes('연봉')) { salaryType = '연봉'; salaryAmount = job.salary.replace('연봉', '').trim(); }
-    else if (job.salary.includes('협의')) { salaryType = '협의'; salaryAmount = '협의'; }
+    else if (job.salary.includes('협의')) { salaryType = '협의'; salaryAmount = ''; }
     else { salaryAmount = job.salary; }
   }
   setVal('job-form-salary-type', salaryType);
-  setVal('job-form-salary-amount', salaryAmount);
+  const salaryAmountDigits = extractDigits(salaryAmount);
+  setVal('job-form-salary-amount', salaryType === '협의' ? '' : (salaryAmountDigits ? formatThousands(salaryAmountDigits) : '2,800,000'));
+  handleSalaryTypeChange();
 
   setVal('job-form-type', job?.type || '정규직');
 
@@ -291,9 +329,11 @@ function getFormDataFromModal() {
   const title = document.getElementById('job-form-title')?.value.trim() || '';
   const category = document.getElementById('job-form-category')?.value.trim() || '';
   const location = document.getElementById('job-form-location')?.value.trim() || '';
-  const headcount = document.getElementById('job-form-headcount')?.value.trim() || '0명';
+  const headcountDigits = extractDigits(document.getElementById('job-form-headcount')?.value);
+  const headcount = headcountDigits ? `${formatThousands(headcountDigits)}명` : '0명';
   const salaryType = document.getElementById('job-form-salary-type')?.value || '월급';
-  const salaryAmount = document.getElementById('job-form-salary-amount')?.value.trim() || '협의';
+  const salaryAmountDigits = extractDigits(document.getElementById('job-form-salary-amount')?.value);
+  const salaryAmount = salaryAmountDigits ? `${formatThousands(salaryAmountDigits)}원` : '협의';
   const type = document.getElementById('job-form-type')?.value || '정규직';
   const timeStart = document.getElementById('job-form-time-start')?.value || '09:00';
   const timeEnd = document.getElementById('job-form-time-end')?.value || '18:00';
