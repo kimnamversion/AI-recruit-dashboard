@@ -25,8 +25,14 @@ app.use(express.urlencoded({ extended: true }));
 
 // 어떤 방식으로 대시보드에 접속하든(파일 직접 열기 포함) API 호출이 막히지 않도록 허용
 app.use((req, res, next) => {
+  // GET/POST/OPTIONS만 허용한다. PUT/DELETE까지 크로스오리진에 열어두면
+  // 인증이 없는 /api/jobs API에 대해 어떤 사이트든 방문자의 브라우저를 통해
+  // preflight를 통과시켜 임의로 쓰기/삭제 요청을 보낼 수 있게 된다.
+  // 이 앱의 프론트엔드는 이 서버와 동일 출처(same-origin)로 서빙되므로
+  // PUT/DELETE 요청에는 애초에 CORS 프리플라이트가 적용되지 않아
+  // 이 제한으로 인한 영향이 없다.
   res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.sendStatus(200);
   next();
@@ -102,11 +108,23 @@ function clearToken() {
 }
 
 // ================================================
-// 정적 파일 서빙: 프로젝트 루트(index.html, css/, js/)를
-// http://localhost:3000/ 로 그대로 제공한다.
+// 정적 파일 서빙: 프론트엔드가 실제로 필요로 하는 파일만
+// 명시적으로 제공한다 (index.html, css/, js/).
+//
+// 주의: 예전에는 프로젝트 루트 전체(express.static(PROJECT_ROOT))를
+// 서빙했는데, 이 경우 server/naver_token.json(실제 네이버 Access
+// Token이 저장된 파일)이나 server/.env 같은 민감한 파일까지
+// http://localhost:PORT/server/... 로 그대로 다운로드가 가능했다.
+// 이는 이 파일 상단 주석의 "Access Token은 브라우저로 절대 넘기지
+// 않는다"는 원칙을 정면으로 위반하는 것이므로, server/ 디렉터리는
+// 절대 정적 서빙 대상에 포함하지 않는다.
 // ================================================
 const PROJECT_ROOT = path.join(__dirname, '..');
-app.use(express.static(PROJECT_ROOT));
+app.use('/css', express.static(path.join(PROJECT_ROOT, 'css')));
+app.use('/js', express.static(path.join(PROJECT_ROOT, 'js')));
+app.get(['/', '/index.html'], (req, res) => {
+  res.sendFile(path.join(PROJECT_ROOT, 'index.html'));
+});
 
 // ================================================
 // 1) 네이버 로그인 시작

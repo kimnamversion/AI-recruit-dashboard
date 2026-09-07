@@ -200,9 +200,9 @@ const AppState = {
     if (this.jobSearch) {
       const q = this.jobSearch.toLowerCase();
       jobs = jobs.filter(j =>
-        j.title.toLowerCase().includes(q) ||
-        j.company.toLowerCase().includes(q) ||
-        j.tags.some(t => t.toLowerCase().includes(q))
+        (j.title || '').toLowerCase().includes(q) ||
+        (j.company || '').toLowerCase().includes(q) ||
+        (j.tags || []).some(t => (t || '').toLowerCase().includes(q))
       );
     }
     return jobs;

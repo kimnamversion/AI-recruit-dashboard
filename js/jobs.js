@@ -81,11 +81,14 @@ function renderJobsList() {
       </div>
 
       <div class="job-card-platforms">
-        ${(job.platforms || []).map(p => `
-          <span class="badge badge-${p}">
-            ${p === 'jobkorea' ? '잡코리아' : p === 'saramin' ? '사람인' : '워크넷'}
+        ${(job.platforms || []).map(p => {
+          const safeP = ['jobkorea', 'saramin', 'worknet'].includes(p) ? p : 'inactive';
+          return `
+          <span class="badge badge-${safeP}">
+            ${p === 'jobkorea' ? '잡코리아' : p === 'saramin' ? '사람인' : p === 'worknet' ? '워크넷' : '알 수 없음'}
           </span>
-        `).join('')}
+        `;
+        }).join('')}
         ${(!job.platforms || job.platforms.length === 0) ? '<span class="badge badge-inactive">미배포</span>' : ''}
         ${job.aiCopy ? '<span class="badge badge-info">✨ AI카피</span>' : ''}
       </div>
