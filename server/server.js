@@ -53,6 +53,14 @@ const pool = DATABASE_URL
     })
   : null;
 
+// 유휴 커넥션에서 예기치 않은 오류가 발생했을 때(예: Postgres 재시작, 연결 리셋)
+// 프로세스 크래시를 방지하고 로그에 기록한다.
+if (pool) {
+  pool.on('error', (err) => {
+    console.error('⚠️  Postgres 커넥션 풀에서 예기치 않은 오류가 발생했습니다:', err.message);
+  });
+}
+
 function requireDb(req, res, next) {
   if (!pool) {
     return res.status(500).json({
