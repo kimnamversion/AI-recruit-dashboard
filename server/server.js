@@ -245,6 +245,57 @@ app.post('/api/naver/cafe/publish', async (req, res) => {
   }
 });
 
+// ================================================
+// 6) 채용공고 CRUD (Postgres 기반, 모든 접속자가 같은 목록을 공유)
+// ================================================
+app.get('/api/jobs', requireDb, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT id, data FROM jobs ORDER BY updated_at DESC');
+    res.json(result.rows.map(row => ({ id: row.id, ...row.data })));
+  } catch (e) {
+    res.status(500).json({ error: `채용공고 목록 조회 중 오류: ${e.message}` });
+  }
+});
+
+app.post('/api/jobs', requireDb, async (req, res) => {
+  try {
+    const id = crypto.randomUUID();
+    const data = req.body || {};
+    await pool.query('INSERT INTO jobs (id, data, updated_at) VALUES ($1, $2, now())', [id, data]);
+    res.status(201).json({ id, ...data });
+  } catch (e) {
+    res.status(500).json({ error: `채용공고 생성 중 오류: ${e.message}` });
+  }
+});
+
+app.put('/api/jobs/:id', requireDb, async (req, res) => {
+  try {
+    const data = req.body || {};
+    const result = await pool.query(
+      'UPDATE jobs SET data = $2, updated_at = now() WHERE id = $1 RETURNING id, data',
+      [req.params.id, data]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: '해당 id의 공고를 찾을 수 없습니다.' });
+    }
+    res.json({ id: result.rows[0].id, ...result.rows[0].data });
+  } catch (e) {
+    res.status(500).json({ error: `채용공고 수정 중 오류: ${e.message}` });
+  }
+});
+
+app.delete('/api/jobs/:id', requireDb, async (req, res) => {
+  try {
+    const result = await pool.query('DELETE FROM jobs WHERE id = $1', [req.params.id]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: '해당 id의 공고를 찾을 수 없습니다.' });
+    }
+    res.status(204).end();
+  } catch (e) {
+    res.status(500).json({ error: `채용공고 삭제 중 오류: ${e.message}` });
+  }
+});
+
 function escapeHtmlServer(str) {
   return String(str)
     .replace(/&/g, '&amp;')
