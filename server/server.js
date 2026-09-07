@@ -262,7 +262,7 @@ app.post('/api/jobs', requireDb, async (req, res) => {
     const id = crypto.randomUUID();
     const data = req.body || {};
     const { id: _ignoredId, ...jobData } = data;
-    await pool.query('INSERT INTO jobs (id, data, updated_at) VALUES ($1, $2, now())', [id, data]);
+    await pool.query('INSERT INTO jobs (id, data, updated_at) VALUES ($1, $2, now())', [id, jobData]);
     res.status(201).json({ id, ...jobData });
   } catch (e) {
     res.status(500).json({ error: `채용공고 생성 중 오류: ${e.message}` });
@@ -272,15 +272,15 @@ app.post('/api/jobs', requireDb, async (req, res) => {
 app.put('/api/jobs/:id', requireDb, async (req, res) => {
   try {
     const data = req.body || {};
+    const { id: _ignoredId, ...jobData } = data;
     const result = await pool.query(
       'UPDATE jobs SET data = $2, updated_at = now() WHERE id = $1 RETURNING id, data',
-      [req.params.id, data]
+      [req.params.id, jobData]
     );
     if (result.rowCount === 0) {
       return res.status(404).json({ error: '해당 id의 공고를 찾을 수 없습니다.' });
     }
-    const { id: _ignoredId, ...jobData } = result.rows[0].data;
-    res.json({ id: result.rows[0].id, ...jobData });
+    res.json({ id: result.rows[0].id, ...result.rows[0].data });
   } catch (e) {
     res.status(500).json({ error: `채용공고 수정 중 오류: ${e.message}` });
   }
