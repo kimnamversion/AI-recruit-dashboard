@@ -160,7 +160,7 @@ const NaverAuthConfig = {
   accessToken: '',
   isConnected: false,   // ⚠️ 오직 백엔드 서버(/api/naver/status)의 실제 응답으로만 true가 된다.
   connectedAt: null,
-  accountName: 'naver_recruiter_01',
+  accountName: '',
 };
 
 /* ================================================
@@ -448,9 +448,6 @@ function renderAdCenterGrid() {
 
           <!-- 푸터 액션 버튼들 -->
           <div class="channel-card-footer">
-            <div style="font-size: 11px; color: var(--text-muted)">
-              규격: <span style="color: #03C75A; font-weight: 600">POST /v1/cafe/{clubid}/menu/{menuid}/articles</span>
-            </div>
             <div style="display: flex; gap: var(--space-2)">
               <button type="button" class="btn btn-sm btn-secondary" onclick="generateSingleCopy('naver_cafe')" title="문구 다시 생성">
                 ✨ 문구 생성
@@ -503,10 +500,6 @@ function renderAdCenterGrid() {
         <!-- 연동 계획 안내 -->
         <div class="channel-plan-box">
           ${escapeHtml(ch.planNote)}
-        </div>
-
-        <div style="font-size: 11px; color: var(--text-muted)">
-          규격(예정): <span style="color: var(--text-secondary)">${ch.format}</span>
         </div>
 
       </div>
@@ -955,7 +948,7 @@ function testNaverConnection() {
       resultEl.innerHTML = `
         <div class="connection-test-result ${isFilled ? 'success' : 'error'}" style="margin-top: 10px">
           ${isFilled
-            ? `✅ 입력값 형식은 유효합니다. (계정: ${NaverAuthConfig.accountName})<br>
+            ? `✅ 입력값 형식은 유효합니다. (계정: ${NaverAuthConfig.accountName || '연결됨'})<br>
                <span style="font-size: 11px; color: var(--text-muted)">⚠️ 이는 형식 검증일 뿐이며, 실제 네이버 서버와의 연동 여부는 게시 시도 시 API 응답으로만 확인됩니다.</span>`
             : `⚠️ Access Token이 없거나 형식이 올바르지 않습니다. 유효한 토큰을 입력해주세요.`}
         </div>
@@ -1013,6 +1006,7 @@ async function refreshNaverConnectionStatus() {
 
     NaverAuthConfig.isConnected = Boolean(data.connected);
     NaverAuthConfig.connectedAt = NaverAuthConfig.isConnected ? new Date().toLocaleString('ko-KR') : null;
+    NaverAuthConfig.accountName = data.nickname || '';
 
     if (statusEl) {
       statusEl.innerHTML = NaverAuthConfig.isConnected

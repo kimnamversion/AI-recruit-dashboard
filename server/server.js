@@ -185,10 +185,22 @@ app.get('/callback', async (req, res) => {
       );
     }
 
+    let nickname = null;
+    try {
+      const profileRes = await fetch('https://openapi.naver.com/v1/nid/me', {
+        headers: { Authorization: `Bearer ${tokenData.access_token}` },
+      });
+      const profileData = await profileRes.json();
+      nickname = profileData?.response?.nickname || null;
+    } catch (e) {
+      // 프로필 조회 실패는 로그인 자체를 막을 이유가 아니므로 nickname만 비워둔다.
+    }
+
     saveToken({
       access_token: tokenData.access_token,
       refresh_token: tokenData.refresh_token || null,
       obtained_at: Date.now(),
+      nickname,
     });
 
     res.send(`
@@ -208,7 +220,10 @@ app.get('/callback', async (req, res) => {
 // ================================================
 app.get('/api/naver/status', (req, res) => {
   const token = loadToken();
-  res.json({ connected: Boolean(token && token.access_token) });
+  res.json({
+    connected: Boolean(token && token.access_token),
+    nickname: token?.nickname || null,
+  });
 });
 
 // ================================================
