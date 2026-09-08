@@ -425,7 +425,7 @@ async function saveJobFromModal(isDraft = false) {
         qualifications: data.qualifications,
         preferred: data.preferred,
         companyIntro: data.companyIntro,
-        status: isDraft ? 'draft' : existingJob.status,
+        status: isDraft ? 'draft' : (existingJob.status === 'draft' ? 'active' : existingJob.status),
       }
     : {
         title: data.title,
@@ -445,7 +445,7 @@ async function saveJobFromModal(isDraft = false) {
         qualifications: data.qualifications,
         preferred: data.preferred,
         companyIntro: data.companyIntro,
-        status: 'draft', // 새 공고는 기본 임시저장
+        status: isDraft ? 'draft' : 'active',
         platforms: [],
         views: 0,
         applicants: 0,
@@ -486,7 +486,7 @@ async function saveJobFromModal(isDraft = false) {
     showToast(
       isDraft
         ? '💾 공고가 임시저장되었습니다.'
-        : '✅ 공고가 저장되었습니다! (임시저장 상태)',
+        : '✅ 공고가 저장되었습니다!',
       'success'
     );
   } catch (e) {
