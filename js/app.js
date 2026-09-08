@@ -6,7 +6,6 @@
    앱 초기화
    ================================================ */
 document.addEventListener('DOMContentLoaded', async () => {
-  loadFromStorage();
   initToastSystem();
   initRouter();
   await AppState.loadJobsFromServer();

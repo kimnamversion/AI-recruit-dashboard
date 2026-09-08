@@ -136,29 +136,12 @@
         </div>
         <div id="platform-grid" class="platform-grid"></div>
 
-        <!-- 하단 2단 레이아웃 -->
-        <div class="dashboard-bottom">
-          <!-- 월별 지원자 차트 -->
-          <div class="card">
-            <div class="section-header" style="margin-bottom: var(--space-4)">
-              <div>
-                <div class="section-title">월별 지원자 현황</div>
-                <div class="section-subtitle">플랫폼별 지원자 추이 (최근 6개월)</div>
-              </div>
-            </div>
-            <div class="chart-container">
-              <canvas id="deploy-chart"></canvas>
-            </div>
+        <!-- 알림 피드 -->
+        <div class="card" style="margin-bottom: var(--space-5)">
+          <div class="section-header" style="margin-bottom: var(--space-4)">
+            <div class="section-title">알림</div>
           </div>
-
-          <!-- 알림 피드 -->
-          <div class="card">
-            <div class="section-header" style="margin-bottom: var(--space-4)">
-              <div class="section-title">알림</div>
-              <button class="btn btn-ghost btn-sm" style="font-size: var(--text-xs); color: var(--text-muted)">모두 읽음</button>
-            </div>
-            <div id="notif-feed" class="notif-feed"></div>
-          </div>
+          <div id="notif-feed" class="notif-feed"></div>
         </div>
 
         <!-- 최근 공고 목록 -->
@@ -320,50 +303,10 @@
             <div class="section-title">성과 분석</div>
             <div class="section-subtitle">플랫폼별 채용 성과를 분석합니다</div>
           </div>
-          <div class="date-range-picker">
-            <div class="date-chip active" data-range="7d">7일</div>
-            <div class="date-chip" data-range="30d">30일</div>
-            <div class="date-chip" data-range="90d">90일</div>
-            <div class="date-chip" data-range="1y">1년</div>
-          </div>
         </div>
 
-        <!-- 요약 KPI -->
-        <div class="grid grid-4" style="margin-bottom: var(--space-5)">
-          <div class="card" style="text-align: center; padding: var(--space-4)">
-            <div style="font-size: var(--text-2xl); font-weight: 800; color: var(--accent-secondary); font-family: var(--font-latin)" id="analytics-views">0</div>
-            <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 4px">총 노출 수</div>
-            <div id="analytics-views-change" style="font-size: var(--text-xs); color: var(--accent-success); margin-top: 2px; font-weight: 600"></div>
-          </div>
-          <div class="card" style="text-align: center; padding: var(--space-4)">
-            <div style="font-size: var(--text-2xl); font-weight: 800; color: var(--accent-success); font-family: var(--font-latin)" id="analytics-apps">0</div>
-            <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 4px">총 지원자</div>
-            <div id="analytics-apps-change" style="font-size: var(--text-xs); color: var(--accent-success); margin-top: 2px; font-weight: 600"></div>
-          </div>
-          <div class="card" style="text-align: center; padding: var(--space-4)">
-            <div style="font-size: var(--text-2xl); font-weight: 800; color: var(--accent-warning); font-family: var(--font-latin)" id="analytics-cpa">0</div>
-            <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 4px">지원자당 비용(CPA)</div>
-          </div>
-          <div class="card" style="text-align: center; padding: var(--space-4)">
-            <div style="font-size: var(--text-2xl); font-weight: 800; color: var(--accent-tertiary); font-family: var(--font-latin)" id="analytics-cvr">0%</div>
-            <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 4px">전환율(CVR)</div>
-          </div>
-        </div>
-
-        <!-- 차트 영역 -->
-        <div class="analytics-grid">
-          <div class="card">
-            <div class="section-title" style="margin-bottom: var(--space-4)">플랫폼별 노출 추이</div>
-            <div class="chart-container chart-tall">
-              <canvas id="views-chart"></canvas>
-            </div>
-          </div>
-          <div class="card">
-            <div class="section-title" style="margin-bottom: var(--space-4)">이번 달 지원자 비중</div>
-            <div class="chart-container" style="height: 280px">
-              <canvas id="platform-compare-chart"></canvas>
-            </div>
-          </div>
+        <div class="channel-plan-box" style="margin-bottom: var(--space-5)">
+          플랫폼별 노출/지원자 추이 등 통계 분석 기능은 아직 구현되지 않았습니다. 실제 게재·조회·지원 데이터를 수집하는 시스템이 마련된 후 제공될 예정입니다. 아래는 등록된 공고 데이터를 기준으로 한 현황입니다.
         </div>
 
         <!-- 공고별 성과 테이블 -->
@@ -428,22 +371,22 @@
                 <div style="display: flex; flex-direction: column; gap: var(--space-4)">
                   <div class="form-group">
                     <label class="form-label">회사명</label>
-                    <input type="text" class="form-input" value="(주)테크스타트업">
+                    <input type="text" class="form-input" placeholder="회사명을 입력하세요">
                   </div>
                   <div class="form-group">
                     <label class="form-label">담당자명</label>
-                    <input type="text" class="form-input" value="관리자">
+                    <input type="text" class="form-input" placeholder="담당자명을 입력하세요">
                   </div>
                   <div class="form-group">
                     <label class="form-label">이메일</label>
-                    <input type="email" class="form-input" value="admin@techstartup.co.kr">
+                    <input type="email" class="form-input" placeholder="이메일을 입력하세요">
                   </div>
                   <div class="form-group">
                     <label class="form-label">연락처</label>
-                    <input type="tel" class="form-input" value="02-1234-5678">
+                    <input type="tel" class="form-input" placeholder="연락처를 입력하세요">
                   </div>
-                  <div style="display: flex; justify-content: flex-end">
-                    <button class="btn btn-primary" onclick="showToast('계정 정보가 저장되었습니다.', 'success')">💾 저장</button>
+                  <div class="channel-plan-box">
+                    계정 정보 저장 기능은 아직 구현되지 않았습니다.
                   </div>
                 </div>
               </div>
@@ -454,26 +397,8 @@
               <div class="card">
                 <div class="section-title" style="margin-bottom: var(--space-5)">알림 설정</div>
                 <div style="display: flex; flex-direction: column; gap: var(--space-4)">
-                  ${[
-                    ['배포 완료 알림', '채용공고 배포가 완료되면 알림을 받습니다'],
-                    ['배포 실패 알림', '배포 오류 발생 시 즉시 알림을 받습니다'],
-                    ['신규 지원자 알림', '새 지원자가 접수되면 알림을 받습니다'],
-                    ['공고 만료 임박 알림', '마감 3일 전 알림을 받습니다'],
-                    ['예산 소진 경고', '월 예산 80% 도달 시 알림을 받습니다'],
-                  ].map(([title, desc]) => `
-                    <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--space-3) 0; border-bottom: 1px solid var(--border-subtle)">
-                      <div>
-                        <div style="font-size: var(--text-sm); font-weight: 600; color: var(--text-primary)">${title}</div>
-                        <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px">${desc}</div>
-                      </div>
-                      <label class="toggle">
-                        <input type="checkbox" checked onchange="showToast('알림 설정이 변경되었습니다.', 'info')">
-                        <span class="toggle-slider"></span>
-                      </label>
-                    </div>
-                  `).join('')}
-                  <div style="display: flex; justify-content: flex-end; margin-top: var(--space-2)">
-                    <button class="btn btn-primary" onclick="showToast('알림 설정이 저장되었습니다.', 'success')">💾 저장</button>
+                  <div class="channel-plan-box">
+                    알림 종류별 수신 설정 기능은 아직 구현되지 않았습니다. 현재는 네이버 카페 게시 등 실제 이벤트 발생 시에만 대시보드 알림이 표시됩니다.
                   </div>
                 </div>
               </div>
@@ -712,11 +637,11 @@
     </div>
     <div class="modal-body">
       <div style="font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: var(--space-3)">
-        배포할 플랫폼을 선택하세요. 선택된 플랫폼에 즉시 공고가 게재됩니다.
+        이 공고를 게시할 플랫폼을 선택하세요. 잡코리아/사람인/워크넷은 자동 게시 기능이 없어 직접 게시한 뒤 기록용으로 체크하는 용도입니다.
       </div>
       <div id="deploy-modal-platforms" style="display: flex; flex-direction: column; gap: var(--space-2)"></div>
       <div style="padding: var(--space-3) var(--space-4); background: rgba(108,99,255,0.06); border: 1px solid rgba(108,99,255,0.15); border-radius: var(--radius-md); font-size: var(--text-xs); color: var(--text-secondary)">
-        💡 플랫폼 연동 설정에서 API 키를 먼저 등록해야 배포가 가능합니다.
+        💡 실제 자동 게시는 광고/배포 센터의 네이버 카페 연동만 지원합니다.
       </div>
     </div>
     <div class="modal-footer">
@@ -757,49 +682,6 @@
         </div>
         <div id="naver-real-connection-status" style="margin-top: var(--space-2); font-size: 12px; color: var(--text-muted)"></div>
       </div>
-
-      <div class="form-section-title" style="margin-top: var(--space-2)">🧪 수동/테스트 입력 (선택 — 실제 게시에는 사용되지 않습니다)</div>
-
-      <div style="background: rgba(3, 199, 90, 0.08); border: 1px solid rgba(3, 199, 90, 0.25); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); font-size: var(--text-xs); color: var(--text-secondary); line-height: 1.6">
-        💡 <strong>네이버 개발자 센터</strong>(<a href="https://developers.naver.com" target="_blank" style="color: #03C75A; text-decoration: underline">developers.naver.com</a>)에서 발급받은 애플리케이션 정보를 아래에 입력해두면 참고용으로 저장됩니다. <br>
-        보안을 위해 인증 정보는 코드에 하드코딩되지 않으며, 사용자의 로컬 브라우저 보안 스토리지에만 저장됩니다. <strong>실제 게시 가능 여부는 위쪽 "실제 로그인" 연결 상태로만 결정됩니다.</strong>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Client ID <span class="required">*</span></label>
-        <input type="text" id="naver-client-id" class="form-input" placeholder="네이버 애플리케이션 Client ID 입력">
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Client Secret <span class="required">*</span></label>
-        <div class="api-key-input-group">
-          <input type="password" id="naver-client-secret" class="form-input" placeholder="Client Secret 입력">
-          <span class="api-key-toggle-btn" onclick="toggleApiKeyVisibility('naver-client-secret', this)">보기</span>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Callback URL (Redirect URI)</label>
-        <input type="text" id="naver-redirect-uri" class="form-input" value="http://localhost:3000/callback" placeholder="네이버 개발자 센터에 등록된 Callback URL">
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Access Token (사용자 접근 토큰)</label>
-        <div class="api-key-input-group">
-          <input type="password" id="naver-access-token" class="form-input" placeholder="OAuth 2.0 발급 토큰 또는 모의 테스트용 토큰 입력">
-          <span class="api-key-toggle-btn" onclick="toggleApiKeyVisibility('naver-access-token', this)">보기</span>
-        </div>
-      </div>
-
-      <div id="naver-auth-test-result"></div>
-    </div>
-
-    <div class="modal-footer" style="justify-content: space-between">
-      <button type="button" class="btn btn-secondary" onclick="loadSampleNaverAuth()">🧪 모의 테스트 계정으로 자동 채우기</button>
-      <div style="display: flex; gap: var(--space-2)">
-        <button type="button" class="btn btn-secondary" onclick="testNaverConnection()">🔍 연결 상태 검증</button>
-        <button type="button" class="btn btn-primary" style="background: #03C75A; border-color: #03C75A; color: #fff" onclick="saveNaverAuthConfig()">💾 설정 저장 및 연결</button>
-      </div>
     </div>
   </div>
 </div>
@@ -818,37 +700,18 @@
 
     <div class="modal-body" style="gap: var(--space-4)">
       
-      <!-- API 규격 안내 박스 -->
-      <div class="naver-cafe-api-box">
-        <div class="naver-cafe-api-title">
-          <span>📡 네이버 카페 공식 글쓰기 API 연동</span>
-          <span style="font-family: var(--font-mono); font-size: 11px">POST /v1/cafe/{clubid}/menu/{menuid}/articles</span>
-        </div>
-        <div style="color: var(--text-muted)">선택한 카페와 게시판으로 아래 광고문구를 게시합니다. 실제 게시 전 내용을 검토하세요.</div>
-      </div>
+      <div style="color: var(--text-muted)">선택한 카페와 게시판으로 아래 광고문구를 게시합니다. 실제 게시 전 내용을 검토하세요.</div>
 
       <!-- 카페 & 게시판 선택 그리드 -->
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4)">
         <div class="form-group">
-          <label class="form-label">대상 네이버 카페 선택 (Club ID) <span class="required">*</span></label>
-          <select id="naver-publish-club" class="form-select" onchange="onPublishClubChanged(this.value)">
-            <option value="29841029" selected>☕ 수도권 알바/구인구직 모임 (ID: 29841029)</option>
-            <option value="30194812">🏭 전국 생산/물류 일자리 구인 (ID: 30194812)</option>
-            <option value="28194018">🏪 동네 구인구직 벼룩시장 (ID: 28194018)</option>
-            <option value="custom">✏️ 직접 Club ID 입력</option>
-          </select>
-          <input type="text" id="naver-custom-club-id" class="form-input hidden" style="margin-top: 6px" placeholder="숫자로 된 카페 Club ID 직접 입력">
+          <label class="form-label">대상 네이버 카페 Club ID <span class="required">*</span></label>
+          <input type="text" id="naver-custom-club-id" class="form-input" placeholder="숫자로 된 카페 Club ID 입력" oninput="updateNaverCafePreviewLive()">
         </div>
 
         <div class="form-group">
-          <label class="form-label">게시판 선택 (Menu ID) <span class="required">*</span></label>
-          <select id="naver-publish-menu" class="form-select" onchange="onPublishMenuChanged(this.value)">
-            <option value="15" selected>📋 [직원/알바 채용] (Menu ID: 15)</option>
-            <option value="22">💼 [구인구직/일자리정보] (Menu ID: 22)</option>
-            <option value="1">💬 [자유게시판] (Menu ID: 1)</option>
-            <option value="custom">✏️ 직접 Menu ID 입력</option>
-          </select>
-          <input type="text" id="naver-custom-menu-id" class="form-input hidden" style="margin-top: 6px" placeholder="숫자로 된 게시판 Menu ID 직접 입력">
+          <label class="form-label">게시판 Menu ID <span class="required">*</span></label>
+          <input type="text" id="naver-custom-menu-id" class="form-input" placeholder="숫자로 된 게시판 Menu ID 입력" oninput="updateNaverCafePreviewLive()">
         </div>
       </div>
 
