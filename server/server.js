@@ -242,7 +242,10 @@ app.post('/api/naver/cafe/publish', async (req, res) => {
 
   try {
     const apiUrl = `https://openapi.naver.com/v1/cafe/${encodeURIComponent(clubId)}/menu/${encodeURIComponent(menuId)}/articles`;
-    const body = new URLSearchParams({ subject, content: content || '' });
+    // 네이버 카페 글쓰기 API 스펙: subject/content는 UTF-8로 encode한 뒤 그 결과를 한 번 더 encode해서 전달해야 한다.
+    // https://developers.naver.com/docs/login/cafe-api/cafe-api.md ("UTF-8로 encode 후 MS949로 재 encode를 수행한 값")
+    const naverEncode = (str) => encodeURIComponent(encodeURIComponent(str));
+    const body = `subject=${naverEncode(subject)}&content=${naverEncode(content || '')}`;
 
     const naverRes = await fetch(apiUrl, {
       method: 'POST',
@@ -250,7 +253,7 @@ app.post('/api/naver/cafe/publish', async (req, res) => {
         Authorization: `Bearer ${token.access_token}`,
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: body.toString(),
+      body,
     });
 
     const data = await naverRes.json().catch(() => ({}));

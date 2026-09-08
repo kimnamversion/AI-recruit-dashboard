@@ -1224,7 +1224,7 @@ async function executeNaverCafePublish() {
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ clubId, menuId, subject, content: content || '' }),
+    body: JSON.stringify({ clubId, menuId, subject, content: (content || '').replace(/\n/g, '<br>') }),
   })
     .then(async (res) => {
       let data = null;
