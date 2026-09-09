@@ -535,7 +535,10 @@
             </div>
             <div class="form-group">
               <label class="form-label">모집 인원 <span class="required">*</span></label>
-              <input type="text" id="job-form-headcount" class="form-input" placeholder="예: 0명 / 2명">
+              <div style="display: flex; align-items: center; gap: var(--space-2)">
+                <input type="text" inputmode="numeric" id="job-form-headcount" class="form-input" placeholder="예: 2">
+                <span style="color: var(--text-secondary); font-size: 13px; white-space: nowrap">명</span>
+              </div>
             </div>
           </div>
 
@@ -544,14 +547,17 @@
             <div class="form-group">
               <label class="form-label">급여 <span class="required">*</span></label>
               <div style="display: grid; grid-template-columns: 100px 1fr; gap: var(--space-2)">
-                <select id="job-form-salary-type" class="form-select">
+                <select id="job-form-salary-type" class="form-select" onchange="handleSalaryTypeChange()">
                   <option value="월급" selected>월급</option>
                   <option value="시급">시급</option>
                   <option value="일급">일급</option>
                   <option value="연봉">연봉</option>
                   <option value="협의">협의</option>
                 </select>
-                <input type="text" id="job-form-salary-amount" class="form-input" placeholder="예: 2,800,000원 / 협의">
+                <div style="display: flex; align-items: center; gap: var(--space-2)">
+                  <input type="text" inputmode="numeric" id="job-form-salary-amount" class="form-input" placeholder="예: 2800000">
+                  <span id="job-form-salary-unit" style="color: var(--text-secondary); font-size: 13px; white-space: nowrap">원</span>
+                </div>
               </div>
             </div>
 

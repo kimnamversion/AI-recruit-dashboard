@@ -18,6 +18,8 @@ const AD_CHANNELS = [
     iconBg: '#03C75A22',
     iconColor: '#03C75A',
     format: '상세형 (검색 최적화)',
+    planStatus: 'blocked',
+    planNote: '2020년 5월 네이버가 블로그 글쓰기 오픈 API를 완전히 폐지해 자동 게시가 불가능합니다.',
   },
   {
     id: 'naver_cafe',
@@ -43,6 +45,8 @@ const AD_CHANNELS = [
     iconBg: '#00D56522',
     iconColor: '#00D565',
     format: '커뮤니티/모바일형',
+    planStatus: 'possible',
+    planNote: '밴드 Open API(write_post)로 자동 게시가 가능합니다. 아직 미구현 상태이며 추후 연동 예정입니다.',
   },
   {
     id: 'instagram',
@@ -55,6 +59,8 @@ const AD_CHANNELS = [
     iconBg: '#E1306C22',
     iconColor: '#E1306C',
     format: '짧은 홍보형 + 해시태그',
+    planStatus: 'possible',
+    planNote: 'Meta Instagram Graph API(콘텐츠 게시)로 연동 가능합니다. 비즈니스 계정 전환과 앱 심사가 필요하며 아직 미구현입니다.',
   },
   {
     id: 'facebook',
@@ -67,6 +73,8 @@ const AD_CHANNELS = [
     iconBg: '#1877F222',
     iconColor: '#1877F2',
     format: '공유/피드형',
+    planStatus: 'possible',
+    planNote: 'Meta Facebook Graph API(페이지 게시)로 연동 가능합니다. 페이지 소유 및 앱 권한 승인이 필요하며 아직 미구현입니다.',
   },
   {
     id: 'youtube_shorts',
@@ -79,6 +87,8 @@ const AD_CHANNELS = [
     iconBg: '#FF000022',
     iconColor: '#FF0000',
     format: '30초 영상 대본형',
+    planStatus: 'possible',
+    planNote: 'YouTube Data API(videos.insert)로 업로드가 가능하지만, 텍스트 카피가 아니라 실제 영상 파일 제작이 먼저 필요합니다. 아직 미구현입니다.',
   },
   // 🟢 무료/저비용 (저비용)
   {
@@ -92,6 +102,8 @@ const AD_CHANNELS = [
     iconBg: '#FEE50022',
     iconColor: '#FEE500',
     format: '짧은 안내/알림톡형',
+    planStatus: 'unclear',
+    planNote: "카카오톡 채널 '소식' 자동 게시용 공개 API 여부가 명확하지 않습니다. 카카오비즈니스 메시지(알림톡/친구톡) API는 별도 채널 심사가 필요합니다.",
   },
   // 🟡 채용 플랫폼
   {
@@ -105,6 +117,8 @@ const AD_CHANNELS = [
     iconBg: '#00833E22',
     iconColor: '#00833E',
     format: '공공 표준 공고형',
+    planStatus: 'blocked',
+    planNote: '공공데이터포털 Open API는 채용정보 조회 전용으로 보입니다. 게시는 고용24 사업주 계정 승인 절차가 필요해 확인이 더 필요합니다.',
   },
   {
     id: 'saramin',
@@ -117,6 +131,8 @@ const AD_CHANNELS = [
     iconBg: '#0066CC22',
     iconColor: '#0066CC',
     format: '플랫폼 지원자 유입형',
+    planStatus: 'blocked',
+    planNote: '자체 self-serve 게시 API가 없습니다. 유료 광고주 제휴 계약(비즈니스 파트너십)이 필요합니다.',
   },
   {
     id: 'jobkorea',
@@ -129,6 +145,8 @@ const AD_CHANNELS = [
     iconBg: '#E8421A22',
     iconColor: '#E8421A',
     format: '플랫폼 공고형',
+    planStatus: 'blocked',
+    planNote: '자체 self-serve 게시 API가 없습니다. 유료 광고주 제휴 계약(비즈니스 파트너십)이 필요합니다.',
   },
 ];
 
@@ -450,19 +468,20 @@ function renderAdCenterGrid() {
       `;
     }
 
-    // 일반 채널 카드 렌더링
+    // 미구현 채널: 실제 게시 기능 없이 연동 계획/현황 안내만 표시
+    const planLabelMap = {
+      possible: { label: '연동 예정', icon: '🔧' },
+      unclear: { label: '확인 필요', icon: '❓' },
+      blocked: { label: '연동 불가', icon: '🚫' },
+    };
+    const planInfo = planLabelMap[ch.planStatus] || planLabelMap.blocked;
+
     return `
-      <div class="channel-card ${isSelected ? 'selected' : ''}" id="channel-card-${ch.id}">
-        
+      <div class="channel-card" id="channel-card-${ch.id}">
+
         <!-- 카드 헤더 -->
         <div class="channel-card-header">
           <div class="channel-card-title-group">
-            <input type="checkbox" 
-              id="chk-channel-${ch.id}" 
-              ${isSelected ? 'checked' : ''} 
-              onchange="onChannelSelectionChanged('${ch.id}', this.checked)"
-              style="width: 18px; height: 18px; accent-color: var(--accent-primary); cursor: pointer"
-            >
             <div class="channel-icon-box" style="background: ${ch.iconBg}; color: ${ch.iconColor}">
               ${ch.icon}
             </div>
@@ -474,39 +493,20 @@ function renderAdCenterGrid() {
 
           <div class="channel-badges-group">
             <span class="${ch.costClass}">${ch.costLabel}</span>
-            <span class="badge ${badgeInfo.class}" id="status-badge-${ch.id}">
-              <span class="badge-dot" style="background: ${badgeInfo.dot}"></span>
-              ${status}
+            <span class="badge badge-inactive">
+              <span class="badge-dot" style="background: #8b9ab8"></span>
+              ${planInfo.icon} ${planInfo.label}
             </span>
           </div>
         </div>
 
-        <!-- 문구 텍스트 영역 -->
-        <div>
-          <textarea 
-            id="copy-text-${ch.id}" 
-            class="channel-textarea" 
-            placeholder="[${ch.name}] 맞춤 광고문구가 여기에 생성됩니다. 직접 수정도 가능합니다."
-            oninput="onChannelTextManualInput('${ch.id}', this.value)"
-          >${escapeHtml(copyText)}</textarea>
+        <!-- 연동 계획 안내 -->
+        <div class="channel-plan-box">
+          ${escapeHtml(ch.planNote)}
         </div>
 
-        <!-- 카드 푸터 액션 버튼들 -->
-        <div class="channel-card-footer">
-          <div style="font-size: 11px; color: var(--text-muted)">
-            규격: <span style="color: var(--text-secondary)">${ch.format}</span>
-          </div>
-          <div style="display: flex; gap: var(--space-2)">
-            <button type="button" class="btn btn-sm btn-secondary" onclick="generateSingleCopy('${ch.id}')" title="이 채널 문구만 다시 생성">
-              ✨ 단독생성
-            </button>
-            <button type="button" class="btn btn-sm btn-secondary" onclick="copyChannelToClipboard('${ch.id}')" title="클립보드로 복사">
-              📋 복사
-            </button>
-            <button type="button" class="btn btn-sm btn-primary" onclick="toggleDeployReady('${ch.id}')" title="배포 준비 상태로 전환">
-              🚀 배포 준비
-            </button>
-          </div>
+        <div style="font-size: 11px; color: var(--text-muted)">
+          규격(예정): <span style="color: var(--text-secondary)">${ch.format}</span>
         </div>
 
       </div>
@@ -908,29 +908,6 @@ function fallbackCopy(text, callback) {
 }
 
 /* ================================================
-   배포 준비 토글 (일반 채널용)
-   ================================================ */
-function toggleDeployReady(channelId) {
-  const currentStatus = AdCenterState.getJobStatus(channelId);
-  const nextStatus = (currentStatus === '배포완료') ? '대기' : '배포완료';
-  AdCenterState.setJobStatus(channelId, nextStatus);
-
-  const badge = document.getElementById(`status-badge-${channelId}`);
-  if (badge) {
-    if (nextStatus === '배포완료') {
-      badge.className = 'badge badge-active';
-      badge.innerHTML = `<span class="badge-dot" style="background: #22d3a0"></span>배포완료`;
-    } else {
-      badge.className = 'badge badge-inactive';
-      badge.innerHTML = `<span class="badge-dot" style="background: #8b9ab8"></span>대기`;
-    }
-  }
-
-  const ch = AD_CHANNELS.find(c => c.id === channelId);
-  showToast(`[${ch?.name || channelId}] 상태가 "${nextStatus}"로 변경되었습니다. (외부 사이트 실제 미게시)`, 'info');
-}
-
-/* ================================================
    네이버 OAuth 2.0 및 계정 연동 모달 로직
    ================================================ */
 function openNaverAuthModal() {
@@ -1224,7 +1201,7 @@ async function executeNaverCafePublish() {
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ clubId, menuId, subject, content: content || '' }),
+    body: JSON.stringify({ clubId, menuId, subject, content: (content || '').replace(/\n/g, '<br>') }),
   })
     .then(async (res) => {
       let data = null;
@@ -1408,7 +1385,6 @@ window.toggleSelectAllChannels = toggleSelectAllChannels;
 window.generateSingleCopy = generateSingleCopy;
 window.generateAllSelectedCopies = generateAllSelectedCopies;
 window.copyChannelToClipboard = copyChannelToClipboard;
-window.toggleDeployReady = toggleDeployReady;
 window.goToAdCenter = goToAdCenter;
 window.openNaverAuthModal = openNaverAuthModal;
 window.saveNaverAuthConfig = saveNaverAuthConfig;
