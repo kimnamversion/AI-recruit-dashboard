@@ -609,11 +609,11 @@ function openDeployModal(job) {
 
   const platformsHtml = Object.values(AppState.platforms).map(p => `
     <label style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); cursor: pointer; transition: all var(--transition-fast);">
-      <input type="checkbox" name="deploy-platform" value="${p.id}" ${p.connected ? 'checked' : ''} ${!p.connected ? 'disabled' : ''} style="width: 16px; height: 16px; accent-color: var(--accent-primary)">
+      <input type="checkbox" name="deploy-platform" value="${p.id}" style="width: 16px; height: 16px; accent-color: var(--accent-primary)">
       <div class="platform-logo-icon" style="background: ${p.color}; width: 28px; height: 28px; font-size: 12px; font-weight: 800; color: white; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0">${p.icon}</div>
       <div>
         <div style="font-size: var(--text-sm); font-weight: 600; color: var(--text-primary)">${p.name}</div>
-        <div style="font-size: var(--text-xs); color: var(--text-muted)">${p.connected ? '연결됨 (즉시 배포 가능)' : '미연결 (설정 필요)'}</div>
+        <div style="font-size: var(--text-xs); color: var(--text-muted)">직접 게시 후 기록용 체크</div>
       </div>
     </label>
   `).join('');
@@ -653,14 +653,14 @@ function openDeployModal(job) {
       if (typeof renderRecentJobs === 'function') renderRecentJobs();
       if (typeof renderKPICards === 'function') renderKPICards();
       if (typeof renderPlatformCards === 'function') renderPlatformCards();
-      showToast(`"${job.title}" 공고가 배포되었습니다! 🚀`, 'success');
+      showToast(`"${job.title}" 공고가 진행 중으로 변경되고, 선택한 플랫폼이 기록되었습니다.`, 'success');
 
       AppState.notifications.unshift({
         id: 'N' + Date.now(),
         type: 'success',
         icon: '✅',
-        title: '배포 완료',
-        desc: `${job.title} 공고가 ${selected.length}개 플랫폼에 게재되었습니다.`,
+        title: '공고 게시 기록',
+        desc: `${job.title} 공고가 ${selected.length}개 플랫폼에 게시된 것으로 기록되었습니다.`,
         time: '방금 전',
         read: false,
       });

@@ -154,13 +154,9 @@ const AD_CHANNELS = [
    네이버 OAuth 2.0 & API 전용 설정 상태
    ================================================ */
 const NaverAuthConfig = {
-  clientId: '',
-  clientSecret: '',
-  redirectUri: 'http://localhost:3000/callback',
-  accessToken: '',
   isConnected: false,   // ⚠️ 오직 백엔드 서버(/api/naver/status)의 실제 응답으로만 true가 된다.
   connectedAt: null,
-  accountName: 'naver_recruiter_01',
+  accountName: '',
 };
 
 /* ================================================
@@ -448,9 +444,6 @@ function renderAdCenterGrid() {
 
           <!-- 푸터 액션 버튼들 -->
           <div class="channel-card-footer">
-            <div style="font-size: 11px; color: var(--text-muted)">
-              규격: <span style="color: #03C75A; font-weight: 600">POST /v1/cafe/{clubid}/menu/{menuid}/articles</span>
-            </div>
             <div style="display: flex; gap: var(--space-2)">
               <button type="button" class="btn btn-sm btn-secondary" onclick="generateSingleCopy('naver_cafe')" title="문구 다시 생성">
                 ✨ 문구 생성
@@ -503,10 +496,6 @@ function renderAdCenterGrid() {
         <!-- 연동 계획 안내 -->
         <div class="channel-plan-box">
           ${escapeHtml(ch.planNote)}
-        </div>
-
-        <div style="font-size: 11px; color: var(--text-muted)">
-          규격(예정): <span style="color: var(--text-secondary)">${ch.format}</span>
         </div>
 
       </div>
@@ -914,84 +903,8 @@ function openNaverAuthModal() {
   const modal = document.getElementById('naver-auth-modal');
   if (!modal) return;
 
-  const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
-  setVal('naver-client-id', NaverAuthConfig.clientId);
-  setVal('naver-client-secret', NaverAuthConfig.clientSecret);
-  setVal('naver-redirect-uri', NaverAuthConfig.redirectUri || 'http://localhost:3000/callback');
-  setVal('naver-access-token', NaverAuthConfig.accessToken);
-
-  const resultEl = document.getElementById('naver-auth-test-result');
-  if (resultEl) resultEl.innerHTML = '';
-
   modal.classList.remove('hidden');
   refreshNaverConnectionStatus();
-}
-
-function loadSampleNaverAuth() {
-  const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
-  setVal('naver-client-id', 'NV_OAUTH_' + Math.random().toString(36).substring(2, 10).toUpperCase());
-  setVal('naver-client-secret', 'sec_' + Math.random().toString(36).substring(2, 12));
-  setVal('naver-redirect-uri', 'http://localhost:3000/callback');
-  setVal('naver-access-token', 'AAAAOnav_mock_token_' + Date.now());
-  showToast('🧪 모의 테스트용 네이버 OAuth 정보가 입력되었습니다.', 'info');
-}
-
-function testNaverConnection() {
-  const clientId = document.getElementById('naver-client-id')?.value.trim();
-  const secret = document.getElementById('naver-client-secret')?.value.trim();
-  const token = document.getElementById('naver-access-token')?.value.trim();
-  const resultEl = document.getElementById('naver-auth-test-result');
-
-  if (!clientId || !secret) {
-    showToast('Client ID와 Client Secret을 모두 입력해주세요.', 'warning');
-    return;
-  }
-
-  showToast('입력하신 정보의 형식을 확인하는 중...', 'info');
-
-  setTimeout(() => {
-    const isFilled = Boolean(token && token.length > 5);
-    if (resultEl) {
-      resultEl.innerHTML = `
-        <div class="connection-test-result ${isFilled ? 'success' : 'error'}" style="margin-top: 10px">
-          ${isFilled
-            ? `✅ 입력값 형식은 유효합니다. (계정: ${NaverAuthConfig.accountName})<br>
-               <span style="font-size: 11px; color: var(--text-muted)">⚠️ 이는 형식 검증일 뿐이며, 실제 네이버 서버와의 연동 여부는 게시 시도 시 API 응답으로만 확인됩니다.</span>`
-            : `⚠️ Access Token이 없거나 형식이 올바르지 않습니다. 유효한 토큰을 입력해주세요.`}
-        </div>
-      `;
-    }
-    showToast(isFilled ? '입력값 형식 확인 완료 (실제 연동은 게시 시 확인됩니다)' : 'Access Token을 확인해주세요.', isFilled ? 'info' : 'warning');
-  }, 1000);
-}
-
-function saveNaverAuthConfig() {
-  const clientId = document.getElementById('naver-client-id')?.value.trim() || '';
-  const clientSecret = document.getElementById('naver-client-secret')?.value.trim() || '';
-  const redirectUri = document.getElementById('naver-redirect-uri')?.value.trim() || 'http://localhost:3000/callback';
-  const accessToken = document.getElementById('naver-access-token')?.value.trim() || '';
-
-  if (!clientId) {
-    showToast('Client ID를 입력해주세요.', 'warning');
-    document.getElementById('naver-client-id')?.focus();
-    return;
-  }
-
-  NaverAuthConfig.clientId = clientId;
-  NaverAuthConfig.clientSecret = clientSecret;
-  NaverAuthConfig.redirectUri = redirectUri;
-  NaverAuthConfig.accessToken = accessToken;
-  NaverAuthConfig.isConnected = Boolean(clientId && accessToken);
-  NaverAuthConfig.connectedAt = new Date().toLocaleString('ko-KR');
-
-  saveAdCenterStorage();
-  closeModal('naver-auth-modal');
-  renderAdCenterGrid();
-
-  showToast(
-    '💾 입력값이 저장되었습니다. (참고용 — 실제 연결 여부는 아래 "실제 로그인" 상태로만 결정됩니다)',
-    'success'
-  );
 }
 
 /* ================================================
@@ -1013,6 +926,7 @@ async function refreshNaverConnectionStatus() {
 
     NaverAuthConfig.isConnected = Boolean(data.connected);
     NaverAuthConfig.connectedAt = NaverAuthConfig.isConnected ? new Date().toLocaleString('ko-KR') : null;
+    NaverAuthConfig.accountName = data.nickname || '';
 
     if (statusEl) {
       statusEl.innerHTML = NaverAuthConfig.isConnected
@@ -1075,39 +989,14 @@ function openNaverCafePublishModal() {
   modal.classList.remove('hidden');
 }
 
-function onPublishClubChanged(val) {
-  const customInput = document.getElementById('naver-custom-club-id');
-  if (customInput) {
-    customInput.classList.toggle('hidden', val !== 'custom');
-    if (val === 'custom') customInput.focus();
-  }
-  updateNaverCafePreviewLive();
-}
-
-function onPublishMenuChanged(val) {
-  const customInput = document.getElementById('naver-custom-menu-id');
-  if (customInput) {
-    customInput.classList.toggle('hidden', val !== 'custom');
-    if (val === 'custom') customInput.focus();
-  }
-  updateNaverCafePreviewLive();
-}
-
 function updateNaverCafePreviewLive() {
-  const clubSelect = document.getElementById('naver-publish-club');
-  const menuSelect = document.getElementById('naver-publish-menu');
   const customClub = document.getElementById('naver-custom-club-id')?.value.trim();
   const customMenu = document.getElementById('naver-custom-menu-id')?.value.trim();
   const subject = document.getElementById('naver-publish-subject')?.value || '채용 공고 제목';
   const copy = AdCenterState.getJobCopy('naver_cafe') || '게시글 본문이 여기에 표시됩니다.';
 
-  const clubName = clubSelect?.value === 'custom' 
-    ? `커스텀 카페 (ID: ${customClub || '미입력'})` 
-    : clubSelect?.options[clubSelect.selectedIndex]?.text.split('(')[0].trim() || '네이버 카페';
-
-  const menuName = menuSelect?.value === 'custom'
-    ? `커스텀 게시판 (ID: ${customMenu || '미입력'})`
-    : menuSelect?.options[menuSelect.selectedIndex]?.text.split('(')[0].trim() || '구인게시판';
+  const clubName = `카페 (ID: ${customClub || '미입력'})`;
+  const menuName = `게시판 (ID: ${customMenu || '미입력'})`;
 
   const previewClubnameEl = document.getElementById('preview-cafe-clubname');
   if (previewClubnameEl) previewClubnameEl.textContent = `${clubName} ＞ ${menuName}`;
@@ -1155,13 +1044,8 @@ async function executeNaverCafePublish() {
   }
 
   // 2. 카페/게시판 ID 및 파라미터 수집
-  const clubSelect = document.getElementById('naver-publish-club');
-  const menuSelect = document.getElementById('naver-publish-menu');
-  let clubId = clubSelect?.value;
-  let menuId = menuSelect?.value;
-
-  if (clubId === 'custom') clubId = document.getElementById('naver-custom-club-id')?.value.trim();
-  if (menuId === 'custom') menuId = document.getElementById('naver-custom-menu-id')?.value.trim();
+  const clubId = document.getElementById('naver-custom-club-id')?.value.trim();
+  const menuId = document.getElementById('naver-custom-menu-id')?.value.trim();
 
   if (!clubId || !menuId) {
     showToast('대상 카페 Club ID와 게시판 Menu ID를 입력해주세요.', 'warning');
@@ -1177,8 +1061,8 @@ async function executeNaverCafePublish() {
     return;
   }
 
-  const clubName = clubSelect?.options[clubSelect.selectedIndex]?.text.split('(')[0].trim() || `카페 (${clubId})`;
-  const menuName = menuSelect?.options[menuSelect.selectedIndex]?.text.split('(')[0].trim() || `게시판 (${menuId})`;
+  const clubName = `카페 (${clubId})`;
+  const menuName = `게시판 (${menuId})`;
 
   const actionBtn = document.getElementById('btn-naver-cafe-publish-action');
   if (actionBtn) {
@@ -1387,14 +1271,9 @@ window.generateAllSelectedCopies = generateAllSelectedCopies;
 window.copyChannelToClipboard = copyChannelToClipboard;
 window.goToAdCenter = goToAdCenter;
 window.openNaverAuthModal = openNaverAuthModal;
-window.saveNaverAuthConfig = saveNaverAuthConfig;
-window.loadSampleNaverAuth = loadSampleNaverAuth;
-window.testNaverConnection = testNaverConnection;
 window.startNaverLogin = startNaverLogin;
 window.refreshNaverConnectionStatus = refreshNaverConnectionStatus;
 window.disconnectNaverAccount = disconnectNaverAccount;
 window.openNaverCafePublishModal = openNaverCafePublishModal;
-window.onPublishClubChanged = onPublishClubChanged;
-window.onPublishMenuChanged = onPublishMenuChanged;
 window.updateNaverCafePreviewLive = updateNaverCafePreviewLive;
 window.executeNaverCafePublish = executeNaverCafePublish;
